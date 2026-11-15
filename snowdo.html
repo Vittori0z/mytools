@@ -320,16 +320,36 @@ function nextToast() {
   setTimeout(() => { $('toast').classList.remove('on'); setTimeout(nextToast, 350); }, 2300);
 }
 
-/* ---------- audio ---------- */
-let ac = null, master = null, noiseBuf = null;
+/* ---------- audio: everything is synthesised, tuned for a snowy slope ---------- */
+let ac = null, master = null, noiseBuf = null, skiGain = null, skiFilter = null, windGain = null, windFilter = null, lastHowl = -99, lastHead = 0, turn = 0;
 function audioOn() {
   if (!ac) {
     try {
-      ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
-      noiseBuf = ac.createBuffer(1, 2205, 22050); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      master = ac.createGain(); master.gain.value = 0.55; master.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const loop = rate => { const s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = true; s.playbackRate.value = rate; return s; };
+      /* skis carving: band-passed noise that follows speed and turning */
+      const ski = loop(1); skiFilter = ac.createBiquadFilter(); skiFilter.type = 'bandpass'; skiFilter.frequency.value = 2000; skiFilter.Q.value = 0.8;
+      skiGain = ac.createGain(); skiGain.gain.value = 0; ski.connect(skiFilter); skiFilter.connect(skiGain); skiGain.connect(master); ski.start();
+      /* mountain wind */
+      const wind = loop(0.6); windFilter = ac.createBiquadFilter(); windFilter.type = 'bandpass'; windFilter.frequency.value = 420; windFilter.Q.value = 0.6;
+      windGain = ac.createGain(); windGain.gain.value = 0; wind.connect(windFilter); windFilter.connect(windGain); windGain.connect(master); wind.start();
     } catch (e) { ac = null; }
   }
   if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
+}
+function audioFrame() {
+  if (!ac || !skiGain) return;
+  const t = ac.currentTime, on = !muted && state === 'play' && !paused && !choosing && alive;
+  let g = 0, f = 1800;
+  let dh = Math.abs(heading - lastHead); if (dh > Math.PI) dh = TAU - dh; lastHead = heading;
+  turn += (Math.min(1, dh * 10) - turn) * 0.15;
+  if (on) { const sp = Math.min(1, Math.hypot(pvx, pvy) / (620 * S)); g = sp * (0.03 + 0.1 * turn); f = 1500 + 2600 * turn + 900 * sp; }
+  skiGain.gain.setTargetAtTime(g, t, 0.05); skiFilter.frequency.setTargetAtTime(f, t, 0.08);
+  const w = muted || paused ? 0 : (state === 'play' ? 0.04 : 0.022) * (1 + 0.6 * Math.sin(time * 0.37) * Math.sin(time * 0.13));
+  windGain.gain.setTargetAtTime(w, t, 0.4); windFilter.frequency.setTargetAtTime(400 + 170 * Math.sin(time * 0.21), t, 0.5);
 }
 function note(f, dur, type, vol, t, slide) {
   const o = ac.createOscillator(), g = ac.createGain();
@@ -339,39 +359,64 @@ function note(f, dur, type, vol, t, slide) {
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.03);
 }
-function tone(f, dur, type, vol, delay, slide) { if (ac && !muted) note(f, dur, type, vol, ac.currentTime + (delay || 0), slide); }
-const SCALE = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24];
+/* glockenspiel-like bell: a sine with two inharmonic partials */
+function bell(f, dur, vol, t) { note(f, dur, 'sine', vol, t); note(f * 2.76, dur * 0.55, 'sine', vol * 0.32, t); note(f * 5.4, dur * 0.25, 'sine', vol * 0.12, t); }
+/* filtered noise burst: snow puffs, scrapes, whooshes, sleigh bells */
+function nz(dur, vol, type, f0, t, f1, q) {
+  const s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuf; fl.type = type; fl.frequency.setValueAtTime(f0, t); if (f1) fl.frequency.exponentialRampToValueAtTime(f1, t + dur); fl.Q.value = q || 0.7;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(fl); fl.connect(g); g.connect(master); s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.05);
+}
+const ok = () => ac && !muted, at = d => ac.currentTime + (d || 0);
+const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
 const sfx = {
-  capture(n, m) { const k = Math.min(n, 7); for (let i = 0; i < k; i++) tone(262 * Math.pow(2, SCALE[Math.min(10, m - 1 + i)] / 12), 0.22, 'triangle', 0.16, i * 0.055); tone(98, 0.25, 'sine', 0.2, 0, 60); },
-  empty() { tone(190, 0.12, 'sine', 0.1, 0, 120); },
-  gem() { tone(1320, 0.3, 'sine', 0.1); tone(1760, 0.35, 'sine', 0.08, 0.07); },
-  aim() { tone(740, 0.08, 'square', 0.04); },
-  cut() { tone(520, 0.1, 'sawtooth', 0.07, 0, 180); },
-  deny() { tone(160, 0.14, 'square', 0.06); },
-  wave() { tone(330, 0.14, 'triangle', 0.12); tone(440, 0.14, 'triangle', 0.12, 0.1); tone(660, 0.3, 'triangle', 0.12, 0.2); },
-  clear() { tone(523, 0.12, 'triangle', 0.12); tone(659, 0.12, 'triangle', 0.12, 0.09); tone(784, 0.12, 'triangle', 0.12, 0.18); tone(1047, 0.4, 'triangle', 0.12, 0.27); },
-  mission() { tone(880, 0.12, 'sine', 0.12); tone(1175, 0.12, 'sine', 0.12, 0.1); tone(1568, 0.35, 'sine', 0.12, 0.2); },
-  shield() { tone(300, 0.5, 'sawtooth', 0.14, 0, 900); tone(90, 0.5, 'sine', 0.25, 0, 40); },
-  gotShield() { tone(660, 0.2, 'sine', 0.12); tone(990, 0.35, 'sine', 0.12, 0.12); },
-  die() { tone(240, 0.7, 'sawtooth', 0.2, 0, 38); tone(120, 0.9, 'square', 0.1, 0.05, 30); },
-  start() { tone(392, 0.12, 'triangle', 0.12); tone(587, 0.18, 'triangle', 0.12, 0.09); }
+  capture(n, m) { if (!ok()) return; nz(0.24, 0.24, 'lowpass', 900, at(), 180); const k = Math.min(n, 7); for (let i = 0; i < k; i++) bell(587.33 * Math.pow(2, PENTA[Math.min(10, m - 1 + i)] / 12), 0.5, 0.12, at(i * 0.06)); },
+  empty() { if (ok()) nz(0.12, 0.09, 'lowpass', 700, at(), 250); },
+  gem() { if (!ok()) return; bell(1568, 0.6, 0.1, at()); bell(1976, 0.6, 0.09, at(0.08)); bell(2349, 0.8, 0.08, at(0.16)); },
+  aim() { if (!ok()) return; bell(1760, 0.12, 0.07, at()); bell(1760, 0.14, 0.07, at(0.11)); },
+  dash() { if (ok()) nz(0.38, 0.14, 'bandpass', 600, at(), 3200, 1.2); },
+  cut() { if (ok()) nz(0.14, 0.16, 'highpass', 3500, at()); },
+  deny() { if (ok()) note(140, 0.12, 'triangle', 0.12, at(), 90); },
+  strip() { if (!ok()) return; nz(0.18, 0.2, 'lowpass', 1200, at(), 300); note(220, 0.1, 'sine', 0.1, at(), 120); },
+  split() { if (!ok()) return; nz(0.08, 0.18, 'highpass', 5000, at()); bell(2637, 0.25, 0.08, at(0.02)); bell(3136, 0.2, 0.06, at(0.07)); },
+  yeti() { if (!ok()) return; note(72, 0.9, 'sawtooth', 0.14, at(), 48); note(108, 0.8, 'sawtooth', 0.06, at(), 70); nz(0.8, 0.12, 'lowpass', 320, at(), 120); },
+  howl() {
+    if (!ok() || time - lastHowl < 14) return; lastHowl = time;
+    const t = at(), o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.setValueAtTime(330, t); o.frequency.exponentialRampToValueAtTime(540, t + 0.35); o.frequency.setValueAtTime(540, t + 0.7); o.frequency.exponentialRampToValueAtTime(400, t + 1.1);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.2); g.gain.setValueAtTime(0.05, t + 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.15);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 1.2);
+  },
+  wave() { if (!ok()) return; bell(880, 0.5, 0.12, at()); bell(1174.66, 0.7, 0.12, at(0.16)); },
+  clear() { if (!ok()) return; [587.33, 739.99, 880, 1174.66].forEach((f, i) => bell(f, 0.5, 0.11, at(i * 0.1))); },
+  mission() { if (!ok()) return; [1174.66, 1479.98, 1760].forEach((f, i) => bell(f, 0.45, 0.1, at(i * 0.1))); },
+  pick() { if (!ok()) return; bell(783.99, 0.4, 0.12, at()); bell(1174.66, 0.5, 0.1, at(0.09)); },
+  gotShield() { if (!ok()) return; bell(987.77, 0.4, 0.12, at()); bell(1479.98, 0.6, 0.1, at(0.1)); },
+  shield() { if (!ok()) return; nz(0.5, 0.3, 'lowpass', 1500, at(), 150); note(110, 0.4, 'sine', 0.25, at(), 45); },
+  die() { if (!ok()) return; for (let i = 0; i < 4; i++) { note(150 - i * 25, 0.14, 'sine', 0.22, at(i * 0.13), 60); nz(0.12, 0.12, 'lowpass', 600, at(i * 0.13), 200); } nz(1.0, 0.3, 'lowpass', 1200, at(0.45), 90); },
+  start() { if (!ok()) return; bell(587.33, 0.4, 0.12, at()); bell(880, 0.5, 0.12, at(0.12)); }
 };
 function buzz(ms) { try { if (!muted && navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
-/* generative music: layers come in with the multiplier */
-const ROOTS = [0, -4, 3, -2], THIRD = [3, 4, 4, 4];
+/* music: glockenspiel over a soft bass in D major, sleigh bells coming in with the multiplier */
+const ROOTS = [0, -3, -7, -5], THIRD = [4, 3, 4, 4];
 let mStep = 0, mNext = 0;
+function sleigh(t, vol) { nz(0.07, vol, 'bandpass', 7500, t, 0, 3); nz(0.05, vol * 0.7, 'bandpass', 9800, t + 0.012, 0, 4); }
 function musicTick() {
   if (!ac || muted || state !== 'play' || paused || ac.state !== 'running') { mNext = 0; return; }
   if (!mNext || mNext < ac.currentTime) mNext = ac.currentTime + 0.05;
-  const stepDur = 60 / Math.min(132, 104 + wave * 2) / 4;
-  while (mNext < ac.currentTime + 0.22) {
-    const s = mStep % 16, bar = Math.floor(mStep / 16) % 4, root = ROOTS[bar], t = mNext;
-    if (s === 0 || s === 3 || s === 6 || s === 8 || s === 11 || s === 14) note(55 * Math.pow(2, root / 12), 0.2, 'triangle', 0.12, t);
-    if (s % 4 === 0 && (mult >= 2 || wave >= 3)) note(130, 0.14, 'sine', 0.2, t, 45);
-    if (s % 2 === 0 && mult >= 2) { const iv = [0, 7, 12, 12 + THIRD[bar], 19, 12 + THIRD[bar], 12, 7][s / 2]; note(220 * Math.pow(2, (root + iv) / 12), 0.16, 'triangle', 0.05, t); }
-    if (s % 2 === 1 && mult >= 4) { const src = ac.createBufferSource(), g = ac.createGain(), hp = ac.createBiquadFilter(); src.buffer = noiseBuf; hp.type = 'highpass'; hp.frequency.value = 6000; g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05); src.connect(hp); hp.connect(g); g.connect(master); src.start(t); src.stop(t + 0.06); }
-    if (s % 8 === 4 && mult >= 6) note(880 * Math.pow(2, (root + THIRD[bar]) / 12), 0.3, 'sine', 0.04, t);
+  const stepDur = 60 / Math.min(124, 96 + wave * 2) / 2;
+  while (mNext < ac.currentTime + 0.25) {
+    const s = mStep % 8, bar = Math.floor(mStep / 8) % 4, root = ROOTS[bar], T = THIRD[bar], t = mNext, second = mStep >= 32;
+    const P = second ? [12, 7, T + 12, 12, 7, T, 7, 12] : [0, T, 7, 12, T + 12, 12, 7, T];
+    if (s === 0) { const f = 146.83 * Math.pow(2, root / 12); note(f, 0.55, 'sine', 0.16, t); note(f * 2, 0.3, 'triangle', 0.035, t); }
+    if (s === 4) note(146.83 * Math.pow(2, (root + 7) / 12), 0.4, 'sine', 0.1, t);
+    if (mult >= 3 || s % 2 === 0) bell(293.66 * Math.pow(2, (root + P[s]) / 12), 0.45, s % 2 ? 0.04 : 0.055, t);
+    if (mult >= 2 && s % 2 === 0) sleigh(t, 0.04);
+    if (mult >= 4 && s % 2 === 1) sleigh(t, 0.025);
+    if ((mult >= 3 || wave >= 3) && s % 4 === 0) note(95, 0.12, 'sine', 0.15, t, 45);
+    if (mult >= 5 && (s === 2 || s === 5)) bell(1174.66 * Math.pow(2, (root + (s === 2 ? T : 7)) / 12), 0.5, 0.035, t);
     mNext += stepDur; mStep = (mStep + 1) % 64;
   }
 }
@@ -485,7 +530,7 @@ function pickPower(i) {
   const k = offers[i]; if (!choosing || !k) return;
   if (k === 'shield') shields = Math.min(3, shields + 1);
   else { pow[k]++; if (k === 'trail') tailLen += tailBase * 0.25; }
-  choosing = false; offers = []; breakT = 0.8; showPows(); sfx.gotShield(); show(null);
+  choosing = false; offers = []; breakT = 0.8; showPows(); sfx.pick(); show(null);
   rings.push({ x: px, y: py, t: 0, max: 0.6, r: 110 * S, color: C.amber, w: 6 });
   floatText(px, py - 44 * S, POW[k].name, 16 * S, C.amber);
 }
@@ -689,7 +734,7 @@ function closeLoop(i, X, B) {
   let kills = 0, pairN = 0, bossKill = 0;
   for (const e of hits) {
     if (e.hp > 1) {
-      e.hp--; e.inv = e.type === 6 ? 1.3 : 0.5;
+      e.hp--; e.inv = e.type === 6 ? 1.3 : 0.5; if (state === 'play') sfx[e.type === 6 ? 'yeti' : 'strip']();
       burst(e.x, e.y, C.ink, 18, 300); rings.push({ x: e.x, y: e.y, t: 0, max: 0.4, r: e.r * 3, color: C.ink, w: 4 });
       if (e.type === 6) { const d = Math.hypot(e.x - px, e.y - py) || 1; e.vx = (e.x - px) / d * 260 * S; e.vy = (e.y - py) / d * 260 * S; spawnAround(e, 3, 90); }
       continue;
@@ -702,7 +747,7 @@ function closeLoop(i, X, B) {
     if (e.type === 4 && solo && !e.small) {
       const a = rnd(0, TAU);
       for (const s of [1, -1]) { const c = mk(4, e.x, e.y, Math.cos(a) * 125 * S * s, Math.sin(a) * 125 * S * s); c.small = true; c.r = 8 * S; c.spawn = 0.45; }
-      if (state === 'play') floatText(e.x, e.y - 30 * S, 'Spaccato', 13 * S, C.lime);
+      if (state === 'play') { floatText(e.x, e.y - 30 * S, 'Spaccato', 13 * S, C.lime); sfx.split(); }
     }
   }
   let echoPts = 0;
@@ -795,7 +840,7 @@ function spawnItem(it) {
       const aa = a + rnd(-0.12, 0.12), sp = it.n > 1 ? 34 * S : 0;
       mk(0, clamp(p.x + rnd(-sp, sp), 14, W - 14), clamp(p.y + rnd(-sp, sp), 14, H - 14), Math.cos(aa) * v, Math.sin(aa) * v);
     }
-  } else if (it.type === 1) mk(1, p.x, p.y, 0, 0);
+  } else if (it.type === 1) { mk(1, p.x, p.y, 0, 0); if (state === 'play') sfx.howl(); }
   else if (it.type === 2) mk(2, p.x, p.y, c * 26 * S, s * 26 * S);
   else if (it.type === 3) mk(3, p.x, p.y, c * v * 0.75, s * v * 0.75);
   else if (it.type === 4) mk(4, p.x, p.y, c * v * 0.9, s * v * 0.9);
@@ -810,7 +855,7 @@ function spawnItem(it) {
 function beginWave(w) {
   wave = w; queue = buildWave(w); spawnT = w === 1 ? 0.15 : 0.7; sinceSpawn = 0;
   setBanner('Discesa ' + w, w % 5 === 0 ? 'Arriva lo Yeti' : bestWave > 1 && w === bestWave ? 'Il tuo massimo' : bestWave > 0 && w === bestWave + 1 ? 'Mai arrivato così lontano' : '');
-  sfx.wave();
+  sfx.wave(); if (w % 5 === 0) sfx.yeti();
 }
 function chase(e, max, acc, dt) {
   const dx = px - e.x, dy = py - e.y, d = Math.hypot(dx, dy) || 1;
@@ -922,7 +967,7 @@ function update(dt) {
       else if (e.st === 1) {
         if (e.tm > 0.2) { const d = Math.hypot(px - e.x, py - e.y) || 1; e.dx = (px - e.x) / d; e.dy = (py - e.y) / d; }
         e.vx *= 0.9; e.vy *= 0.9;
-        if (e.tm <= 0) { e.st = 2; e.tm = 0.5; e.vx = e.dx * 640 * S; e.vy = e.dy * 640 * S; }
+        if (e.tm <= 0) { e.st = 2; e.tm = 0.5; if (state === 'play') sfx.dash(); e.vx = e.dx * 640 * S; e.vy = e.dy * 640 * S; }
       } else if (e.st === 2) {
         if (parts.length < 400) parts.push({ x: e.x, y: e.y, vx: 0, vy: 0, life: 0.25, max: 0.25, color: C.amber, size: 5 * S });
         for (let k = tail.length - 2; k >= 0; k--) {
@@ -1381,7 +1426,7 @@ function frame(now) {
     update(dt * timeScale);
   }
   if (state === 'over') { overT += dt; if (!overShown && overT > 0.45) { overShown = true; showOver(); } } else overShown = false;
-  draw(); hud();
+  draw(); hud(); audioFrame();
   requestAnimationFrame(frame);
 }
 resize(); fillMissions(); reset(); state = 'menu'; refreshMenu();
