@@ -5,23 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 </head>
 <body>
-<title>NODO</title>
+<title>Snowdo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Manrope:wght@500;700&display=swap">
 <style>
-/* Layout: campo di gioco a tutto schermo, HUD sottile in alto, pannelli centrati sopra il gioco. Un solo look notturno, per scelta. */
+/* Layout: pista vista dall'alto a tutto schermo, HUD sottile in alto, pannelli centrati sopra il gioco. Un solo look diurno sulla neve, per scelta. */
 :root{
-  --night:#1a0f42; --deep:#0a0520; --ink:#f4eeff; --dim:#ab9fce;
-  --aqua:#5ff2e0; --coral:#ff6b5e; --orchid:#d67bff; --amber:#ffc24a;
-  --steel:#8fb4ff; --lime:#a6f26b; --rose:#ff8fd0; --core:#ff5f8f;
-  --panel:rgba(16,9,44,.82); --line:rgba(244,238,255,.16);
+  --snow:#f4f8fd; --shade:#d5e2f2; --spray:#a9c4e4; --ink:#14304f; --dim:#5b7390;
+  --blue:#2f7de1; --red:#e5483f; --amber:#f0a31c; --violet:#7a5cf0; --pine:#1f6b52;
+  --wolf:#4b5a70; --sled:#f07f23; --ice:#3fb6dd; --rope:#d6479a; --yeti:#8fa9c9;
+  --panel:rgba(255,255,255,.93); --line:rgba(20,48,79,.16); --soft:rgba(20,48,79,.06);
   --display:'Unbounded','Arial Black','Segoe UI',system-ui,sans-serif;
   --body:'Manrope','Segoe UI',system-ui,-apple-system,sans-serif;
-  color-scheme:dark;
+  color-scheme:light;
 }
 [hidden]{display:none!important}
 html,body{height:100%}
-body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);overflow:hidden;
+body{margin:0;background:var(--snow);color:var(--ink);font-family:var(--body);overflow:hidden;
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 #stage{position:relative;width:100%;height:100%;overflow:hidden}
 #game{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
@@ -31,69 +31,70 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
   pointer-events:none;z-index:3}
 .hud-left{display:flex;flex-direction:column;gap:6px;min-width:0}
 #score{font-family:var(--display);font-weight:800;font-size:clamp(26px,6vw,40px);line-height:1;font-variant-numeric:tabular-nums;
-  text-shadow:0 0 18px rgba(95,242,224,.35)}
+  text-shadow:0 0 10px var(--snow),0 0 2px var(--snow)}
 #meta{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
 #shields{display:flex;gap:4px}
-#shields i{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);box-shadow:0 0 8px var(--aqua)}
+#shields i{width:11px;height:11px;border-radius:50%;background:var(--red);border:2px solid var(--ink);box-sizing:border-box}
 #combo{display:flex;align-items:center;gap:8px;opacity:0;transition:opacity .25s}
 #combo.on{opacity:1}
-#mult{font-family:var(--display);font-weight:800;font-size:15px;color:var(--deep);background:var(--aqua);padding:3px 9px;border-radius:999px;
+#mult{font-family:var(--display);font-weight:800;font-size:15px;color:var(--snow);background:var(--blue);padding:3px 9px;border-radius:999px;
   font-variant-numeric:tabular-nums}
 #comboTrack{width:84px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
-#comboBar{width:100%;height:100%;background:var(--aqua);transform-origin:left center}
+#comboBar{width:100%;height:100%;background:var(--blue);transform-origin:left center}
+#pows{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);max-width:46vw}
 .hud-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:0}
 .hud-btns{display:flex;gap:8px;pointer-events:auto}
 #goal{display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:100%}
-#goalText{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-shadow:0 1px 8px var(--deep)}
+#goalText{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-shadow:0 0 8px var(--snow)}
 #goalTrack{width:120px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
-#goalBar{display:block;width:100%;height:100%;background:var(--amber);transform-origin:left center}
-.near{margin:0;color:var(--amber);font-weight:700;font-size:14px;line-height:1.4;text-wrap:balance}
-.icon{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(16,9,44,.55);color:var(--ink);
+#goalBar{display:block;width:100%;height:100%;background:var(--red);transform-origin:left center}
+.icon{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.85);color:var(--ink);
   display:grid;place-items:center;cursor:pointer;padding:0}
-.icon:focus-visible,.btn:focus-visible,.ghost:focus-visible,.sw:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
+.icon:focus-visible,.btn:focus-visible,.ghost:focus-visible,.sw:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .icon svg{width:18px;height:18px}
 .icon[aria-pressed="true"]{color:var(--dim)}
 .icon[aria-pressed="true"] .wave{display:none}
 
 #hint,#toast{position:absolute;left:0;right:0;text-align:center;font-weight:700;pointer-events:none;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-#hint{bottom:calc(22px + env(safe-area-inset-bottom,0px));font-size:15px;color:var(--ink);z-index:2;text-shadow:0 2px 12px var(--deep);text-wrap:balance}
+#hint{bottom:calc(22px + env(safe-area-inset-bottom,0px));font-size:15px;color:var(--ink);z-index:2;text-shadow:0 0 10px var(--snow),0 0 3px var(--snow);text-wrap:balance}
 #toast{top:86px;z-index:5;opacity:0;transform:translateY(-8px);transition:opacity .3s,transform .3s}
 #toast.on{opacity:1;transform:none}
-#toast span{display:inline-block;background:var(--amber);color:var(--deep);font-size:13px;padding:8px 16px;border-radius:999px;max-width:100%}
+#toast span{display:inline-block;background:var(--ink);color:var(--snow);font-size:13px;padding:8px 16px;border-radius:999px;max-width:100%}
 
 #overlay{position:absolute;inset:0;display:grid;place-items:center;z-index:4;
   padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  background:radial-gradient(ellipse at center,rgba(10,5,32,.35),rgba(10,5,32,.8))}
+  background:radial-gradient(ellipse at center,rgba(244,248,253,.35),rgba(213,226,242,.8))}
 .panel{width:min(100%,440px);max-height:100%;overflow-y:auto;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;
-  background:var(--panel);border:1px solid var(--line);border-radius:28px;padding:28px 22px 24px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.logo{font-family:var(--display);font-weight:800;font-size:clamp(52px,17vw,84px);line-height:.9;letter-spacing:.02em;margin:0;
-  background:linear-gradient(100deg,var(--aqua) 10%,var(--ink) 45%,var(--orchid) 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
-.panel h2{font-family:var(--display);font-weight:800;font-size:22px;margin:0;letter-spacing:.04em;text-wrap:balance}
+  background:var(--panel);border:1px solid var(--line);border-radius:28px;padding:28px 22px 24px;box-shadow:0 24px 60px rgba(20,48,79,.2)}
+.logo{font-family:var(--display);font-weight:800;font-size:clamp(40px,13.5vw,68px);line-height:.95;letter-spacing:.01em;margin:0;
+  background:linear-gradient(100deg,var(--blue) 5%,var(--ink) 55%,var(--red) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.panel h2{font-family:var(--display);font-weight:800;font-size:22px;margin:0;letter-spacing:.03em;text-wrap:balance}
 .panel h3{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:6px 0 0}
 .lead{margin:0;font-size:16px;line-height:1.45;color:var(--ink);max-width:32ch;text-wrap:balance}
 .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.btn{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.05em;color:var(--deep);background:var(--aqua);border:2px solid var(--aqua);border-radius:999px;
+.btn{font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.05em;color:var(--snow);background:var(--ink);border:2px solid var(--ink);border-radius:999px;
   padding:13px 28px;cursor:pointer}
-.btn:hover{background:var(--ink);border-color:var(--ink)}
+.btn:hover{background:var(--blue);border-color:var(--blue)}
 .btn.alt{background:transparent;color:var(--ink);border-color:var(--line)}
 .btn.alt:hover{border-color:var(--ink);background:transparent}
-.ghost{font:700 13px var(--body);color:var(--ink);background:rgba(244,238,255,.07);border:0;border-radius:999px;padding:9px 14px;cursor:pointer}
-.ghost:hover,.ghost[aria-pressed="true"]{background:rgba(244,238,255,.2)}
+.ghost{font:700 13px var(--body);color:var(--ink);background:var(--soft);border:0;border-radius:999px;padding:9px 14px;cursor:pointer}
+.ghost:hover,.ghost[aria-pressed="true"]{background:rgba(20,48,79,.16)}
 .small{font-size:12px;line-height:1.45;color:var(--dim);margin:0;max-width:38ch;text-wrap:balance}
 .big{font-family:var(--display);font-weight:800;font-size:clamp(40px,12vw,58px);line-height:1;font-variant-numeric:tabular-nums}
 .stats{display:flex;gap:6px 18px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;font-weight:700}
 .stats b{color:var(--ink);font-variant-numeric:tabular-nums}
-.record{color:var(--amber);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px}
+.record{color:var(--red);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px}
+.near{margin:0;color:var(--red);font-weight:700;font-size:14px;line-height:1.4;text-wrap:balance}
 .list{list-style:none;margin:0;padding:0;width:100%;display:flex;flex-direction:column;gap:6px;text-align:left;font-size:13.5px}
-.list li{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(244,238,255,.06);min-width:0}
+.list li{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:var(--soft);min-width:0}
 .list li span{flex:1;min-width:0;overflow-wrap:anywhere}
 .list li b{flex:none;font-variant-numeric:tabular-nums;color:var(--dim);font-weight:700}
-.list li.done{background:rgba(255,194,74,.16)}
-.list li.done b{color:var(--amber)}
-.list li.me{background:rgba(95,242,224,.16)}
+.list li.done{background:rgba(240,163,28,.2)}
+.list li.done b{color:var(--ink)}
+.list li.me{background:rgba(47,125,225,.16)}
 .list li em{flex:none;width:1.6em;font-style:normal;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
-.list svg{flex:none;width:18px;height:18px}
+.list svg{flex:none;width:20px;height:20px}
 .stars{font-family:var(--display);font-weight:800;color:var(--amber);font-size:18px}
 .swatches{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .sw{width:64px;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:0;color:var(--dim);font:700 11px var(--body);cursor:pointer;padding:2px}
@@ -101,23 +102,22 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
 .sw[aria-pressed="true"] i{border-color:var(--ink)}
 .sw[aria-pressed="true"]{color:var(--ink)}
 .sw:disabled{cursor:default;opacity:.45}
-#pows{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);max-width:46vw}
 .cards{display:flex;flex-direction:column;gap:10px;width:100%}
 .card{display:flex;flex-direction:column;gap:5px;text-align:left;width:100%;box-sizing:border-box;padding:15px 16px;border-radius:18px;border:2px solid var(--line);
-  background:rgba(244,238,255,.06);color:var(--ink);font:500 14px/1.4 var(--body);cursor:pointer}
-.card:hover,.card:focus-visible{border-color:var(--aqua);outline:none;background:rgba(95,242,224,.1)}
+  background:var(--soft);color:var(--ink);font:500 14px/1.4 var(--body);cursor:pointer}
+.card:hover,.card:focus-visible{border-color:var(--blue);outline:none;background:rgba(47,125,225,.1)}
 .card strong{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.03em}
-.card small{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
-@media (max-height:560px){.panel{padding:16px 18px;gap:9px}.logo{font-size:44px}}
+.card small{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red)}
+@media (max-height:560px){.panel{padding:16px 18px;gap:9px}.logo{font-size:40px}}
 </style>
 
 <div id="stage">
-  <canvas id="game" aria-label="Campo di gioco di NODO"></canvas>
+  <canvas id="game" aria-label="Pista di Snowdo vista dall'alto"></canvas>
 
   <div id="hud" hidden>
     <div class="hud-left">
       <div id="score">0</div>
-      <div id="meta"><span id="wave">Ondata 1</span><span id="shields"></span></div>
+      <div id="meta"><span id="wave">Discesa 1</span><span id="shields"></span></div>
       <div id="combo"><span id="mult">×1</span><span id="comboTrack"><span id="comboBar" style="display:block"></span></span></div>
       <div id="pows"></div>
     </div>
@@ -139,13 +139,13 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
 
   <div id="overlay">
     <div class="panel" id="pMenu">
-      <h1 class="logo">NODO</h1>
-      <p class="lead">Chiudi la scia attorno ai nemici. Più ne stringi in un nodo solo, più vale.</p>
+      <h1 class="logo">SNOWDO</h1>
+      <p class="lead">Scia sulla neve battuta e chiudi la traccia attorno agli ostacoli. Più ne stringi in un nodo solo, più vale.</p>
       <div class="row">
         <button class="btn" id="btnPlay" type="button">Gioca</button>
         <button class="btn alt" id="btnDaily" type="button">Sfida del giorno</button>
       </div>
-      <p class="small" id="dailyInfo">La sfida del giorno ha le stesse ondate per tutti.</p>
+      <p class="small" id="dailyInfo">La sfida del giorno ha le stesse discese per tutti.</p>
       <div class="row">
         <button class="ghost" id="btnMissions" type="button">Missioni</button>
         <button class="ghost" id="btnBoard" type="button">Classifica</button>
@@ -156,17 +156,17 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
 
     <div class="panel" id="pHow" hidden>
       <h2>Come si gioca</h2>
-      <p class="small">Chiudi la scia su sé stessa: tutto ciò che resta dentro viene catturato. I punti crescono col quadrato dei nemici presi insieme, e da due in su sale il moltiplicatore. Se chiudi con un nemico a un soffio dalla cometa il nodo vale il 50% in più. Alla fine di ogni ondata scegli un potenziamento fra due.</p>
+      <p class="small">Chiudi la traccia su sé stessa: tutto ciò che resta dentro il nodo sparisce. I punti crescono col quadrato degli ostacoli presi insieme, e da due in su sale il moltiplicatore. Se chiudi con un ostacolo a un soffio dallo sciatore il nodo vale il 50% in più. Alla fine di ogni discesa scegli un potenziamento fra due.</p>
       <ul class="list">
-        <li><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#ff6b5e"/></svg><span>Vagante: rimbalza per il campo</span></li>
-        <li><svg viewBox="0 0 16 16"><path d="M15 8 2 14l3-6-3-6z" fill="#d67bff"/></svg><span>Cacciatore: ti insegue</span></li>
-        <li><svg viewBox="0 0 16 16"><path d="M8 1 15 8 8 15 1 8z" fill="#ffc24a"/></svg><span>Lama: scatta e taglia la scia</span></li>
-        <li><svg viewBox="0 0 16 16"><path d="M8 1l6 3.5v7L8 15l-6-3.5v-7z" fill="#8fb4ff"/></svg><span>Corazzato: va chiuso due volte</span></li>
-        <li><svg viewBox="0 0 16 16"><circle cx="5.5" cy="8" r="4.5" fill="#a6f26b"/><circle cx="10.5" cy="8" r="4.5" fill="#a6f26b"/></svg><span>Gemello: preso da solo si divide in due</span></li>
-        <li><svg viewBox="0 0 16 16"><path d="M3 8h10" stroke="#ff8fd0" stroke-width="2"/><rect x="1" y="5" width="5" height="6" fill="#ff8fd0"/><rect x="10" y="5" width="5" height="6" fill="#ff8fd0"/></svg><span>Legati: vanno chiusi nello stesso nodo</span></li>
-        <li><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#ff5f8f"/><circle cx="8" cy="8" r="3" fill="#0a0520"/></svg><span>Nucleo: ogni 5 ondate, serve più di un nodo</span></li>
-        <li><svg viewBox="0 0 16 16"><path d="M8 0 10 6 16 8 10 10 8 16 6 10 0 8 6 6z" fill="#f4eeff"/></svg><span>Gemma: raddoppia il nodo che la contiene</span></li>
-        <li><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="#f4eeff" stroke-width="2"/></svg><span>Scudo: lo guadagni coi punti, assorbe un colpo</span></li>
+        <li><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="#fff" stroke="#14304f" stroke-width="1.5"/></svg><span>Palla di neve: rotola per la pista</span></li>
+        <li><svg viewBox="0 0 20 20"><ellipse cx="9" cy="10" rx="7" ry="4" fill="#4b5a70"/><circle cx="16" cy="10" r="3" fill="#4b5a70"/></svg><span>Lupo: ti insegue</span></li>
+        <li><svg viewBox="0 0 20 20"><rect x="2" y="6" width="16" height="8" rx="3" fill="#f07f23"/></svg><span>Slittino: scatta e taglia la traccia</span></li>
+        <li><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#fff" stroke="#14304f" stroke-width="1.5"/><circle cx="10" cy="10" r="4" fill="#14304f"/></svg><span>Pupazzo di neve: va chiuso due volte</span></li>
+        <li><svg viewBox="0 0 20 20"><path d="M10 2l7 4v8l-7 4-7-4V6z" fill="#3fb6dd"/><path d="M10 2v16" stroke="#fff" stroke-width="1.5"/></svg><span>Blocco di ghiaccio: preso da solo si spacca in due</span></li>
+        <li><svg viewBox="0 0 20 20"><path d="M5 10h10" stroke="#14304f" stroke-width="1.5"/><circle cx="4.5" cy="10" r="3.5" fill="#d6479a"/><circle cx="15.5" cy="10" r="3.5" fill="#d6479a"/></svg><span>Cordata: i due alpinisti vanno chiusi insieme</span></li>
+        <li><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#e9f1fa" stroke="#14304f" stroke-width="1.5"/><ellipse cx="10" cy="10" rx="5" ry="4" fill="#8fa9c9"/></svg><span>Yeti: ogni 5 discese, serve più di un nodo</span></li>
+        <li><svg viewBox="0 0 20 20"><path d="M10 0l2.5 7.5L20 10l-7.5 2.5L10 20l-2.5-7.5L0 10l7.5-2.5z" fill="#fff" stroke="#f0a31c" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="#f0a31c"/></svg><span>Stella alpina: raddoppia il nodo che la contiene</span></li>
+        <li><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" fill="#e5483f" stroke="#14304f" stroke-width="2"/></svg><span>Casco: lo guadagni coi punti, assorbe una caduta</span></li>
       </ul>
       <button class="btn alt" data-back type="button">Indietro</button>
     </div>
@@ -175,9 +175,9 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
       <h2>Missioni</h2>
       <div class="stars" id="starCount">★ 0</div>
       <ul class="list" id="missionList"></ul>
-      <h3>Scia</h3>
+      <h3>Tuta e traccia</h3>
       <div class="swatches" id="swatches"></div>
-      <p class="small">Ogni missione completata vale una stella. Le stelle sbloccano nuove scie.</p>
+      <p class="small">Ogni missione completata vale una stella. Le stelle sbloccano nuove tute.</p>
       <button class="btn alt" data-back type="button">Indietro</button>
     </div>
 
@@ -193,10 +193,10 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
     </div>
 
     <div class="panel" id="pOver" hidden>
-      <h2 id="overTitle">Cometa spenta</h2>
+      <h2 id="overTitle">Sei caduto</h2>
       <div class="record" id="newRec" hidden>Nuovo record</div>
       <div class="big" id="finalScore">0</div>
-      <div class="stats"><span><span id="bestLabel">Record</span> <b id="finalBest">0</b></span><span>Ondata <b id="finalWave">1</b></span><span>Nodo migliore <b id="finalKnot">0</b></span></div>
+      <div class="stats"><span><span id="bestLabel">Record</span> <b id="finalBest">0</b></span><span>Discesa <b id="finalWave">1</b></span><span>Nodo migliore <b id="finalKnot">0</b></span></div>
       <p class="near" id="nearMiss" hidden></p>
       <ul class="list" id="overMissions"></ul>
       <div class="row">
@@ -228,8 +228,9 @@ const $ = id => document.getElementById(id);
 const stage = $('stage'), cv = $('game'), ctx = cv.getContext('2d');
 const css = getComputedStyle(document.documentElement);
 const tok = n => css.getPropertyValue(n).trim();
-const C = { night: tok('--night'), deep: tok('--deep'), ink: tok('--ink'), aqua: tok('--aqua'), coral: tok('--coral'), orchid: tok('--orchid'),
-            amber: tok('--amber'), dim: tok('--dim'), steel: tok('--steel'), lime: tok('--lime'), rose: tok('--rose'), core: tok('--core') };
+const C = {};
+for (const k of ['snow', 'shade', 'spray', 'ink', 'dim', 'blue', 'red', 'amber', 'violet', 'pine', 'wolf', 'sled', 'ice', 'rope', 'yeti']) C[k] = tok('--' + k);
+C.aqua = C.blue; C.coral = C.red; C.orchid = C.violet; C.lime = C.ice; C.rose = C.rope; C.deep = C.ink;
 const DISPLAY = tok('--display');
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const TAU = Math.PI * 2, rnd = (a, b) => a + Math.random() * (b - a);
@@ -265,25 +266,25 @@ save.stars = +save.stars || 0; save.total = +save.total || 0; save.skin = +save.
 const persist = () => store.set('nodo_save', JSON.stringify(save));
 
 const SKINS = [
-  { name: 'Acqua', need: 0, cols: [C.aqua, C.aqua, '#7df7a8', '#c9f76a', C.amber, '#ff9a5c', C.coral, '#ff6fb5', C.orchid, C.ink] },
-  { name: 'Aurora', need: 2, cols: ramp('#7df7a8', '#5fd8ff', '#f4eeff') },
-  { name: 'Brace', need: 4, cols: ramp('#ffb347', '#ff7a4d', '#fff1c9') },
-  { name: 'Orchidea', need: 7, cols: ramp('#d67bff', '#ff6fb5', '#ffe3f6') },
-  { name: 'Ghiaccio', need: 10, cols: ramp('#8fc7ff', '#d5ecff', '#ffffff') },
+  { name: 'Pista', need: 0, cols: ['#2f7de1', '#2f7de1', '#1f9bd1', '#17a89a', '#2aa84a', '#8aa81c', '#e09a12', '#ef6f1f', '#e5483f', '#c42d8e'] },
+  { name: 'Abete', need: 2, cols: ramp('#1f6b52', '#2aa84a', '#8aa81c') },
+  { name: 'Tramonto', need: 4, cols: ramp('#f0a31c', '#ef6f1f', '#c9302c') },
+  { name: 'Lampone', need: 7, cols: ramp('#d6479a', '#b833c9', '#6b3fd6') },
+  { name: 'Notte', need: 10, cols: ramp('#14304f', '#2a4f85', '#2f7de1') },
   { name: 'Iride', need: 14, cols: null }
 ];
 if (!SKINS[save.skin] || SKINS[save.skin].need > save.stars) save.skin = 0;
 
 const MDEF = {
-  knot: { t: [3, 4, 5, 6, 8, 10], txt: n => 'Cattura ' + n + ' nemici in un solo nodo' },
+  knot: { t: [3, 4, 5, 6, 8, 10], txt: n => 'Chiudi ' + n + ' ostacoli in un solo nodo' },
   mult: { t: [2, 3, 4, 5, 7, 9], txt: n => 'Arriva al moltiplicatore ×' + n },
-  wave: { t: [1, 2, 3, 4, 6, 8, 10, 12], txt: n => 'Supera l\'ondata ' + n },
+  wave: { t: [1, 2, 3, 4, 6, 8, 10, 12], txt: n => 'Supera la discesa ' + n },
   score: { t: [500, 1000, 2000, 3500, 6000, 10000, 20000], txt: n => 'Fai ' + fmt(n) + ' punti in una partita' },
-  gems: { t: [1, 2, 3], txt: n => n === 1 ? 'Chiudi una gemma in un nodo' : 'Chiudi ' + n + ' gemme in una partita' },
+  gems: { t: [1, 2, 3], txt: n => n === 1 ? 'Chiudi una stella alpina in un nodo' : 'Chiudi ' + n + ' stelle alpine in una partita' },
   close: { t: [1, 3, 5], txt: n => n === 1 ? 'Chiudi un nodo al pelo' : 'Chiudi ' + n + ' nodi al pelo in una partita' },
-  total: { t: [20, 50, 100, 200, 400, 1000], txt: n => 'Cattura ' + fmt(n) + ' nemici in totale' },
-  boss: { t: [1, 2], txt: n => n === 1 ? 'Sconfiggi un Nucleo' : 'Sconfiggi ' + n + ' Nuclei in una partita', gate: 3 },
-  pairs: { t: [1, 3], txt: n => n === 1 ? 'Cattura una coppia di Legati' : 'Cattura ' + n + ' coppie di Legati in una partita', gate: 3 }
+  total: { t: [20, 50, 100, 200, 400, 1000], txt: n => 'Chiudi ' + fmt(n) + ' ostacoli in totale' },
+  boss: { t: [1, 2], txt: n => n === 1 ? 'Batti uno Yeti' : 'Batti ' + n + ' Yeti in una partita', gate: 3 },
+  pairs: { t: [1, 3], txt: n => n === 1 ? 'Chiudi una cordata' : 'Chiudi ' + n + ' cordate in una partita', gate: 3 }
 };
 const mTarget = m => { const d = MDEF[m.type]; return d.t[Math.min(m.lvl || 0, d.t.length - 1)]; };
 const mText = m => MDEF[m.type].txt(mTarget(m));
@@ -425,7 +426,7 @@ function renderBoard() {
   el.textContent = '';
   const add = (rank, name, pts, w, me) => {
     const li = document.createElement('li'), r = document.createElement('em'), s = document.createElement('span'), b = document.createElement('b');
-    r.textContent = rank; s.textContent = name; b.textContent = fmt(pts) + (w ? ' · ond. ' + w : '');
+    r.textContent = rank; s.textContent = name; b.textContent = fmt(pts) + (w ? ' · disc. ' + w : '');
     if (me) li.className = 'me'; li.append(r, s, b); el.append(li);
   };
   if (!cloud) {
@@ -442,11 +443,11 @@ function renderBoard() {
 }
 
 /* ---------- world ---------- */
-const ER = [11, 12, 13, 13, 13, 11, 28];
-const ECOL = [C.coral, C.orchid, C.amber, C.steel, C.lime, C.rose, C.core];
+const ER = [13, 13, 14, 15, 14, 12, 30];
+const ECOL = [C.spray, C.wolf, C.sled, C.spray, C.ice, C.rope, C.yeti];
 let W = 0, H = 0, DPR = 1, S = 1, areaF = 1, bg = null;
 let state = 'menu', paused = false, time = 0, runT = 0, overT = 0, timeScale = 1, shake = 0;
-let px = 0, py = 0, tx = 0, ty = 0, alive = true, pvx = 0, pvy = 0;
+let px = 0, py = 0, tx = 0, ty = 0, alive = true, pvx = 0, pvy = 0, heading = -Math.PI / 2;
 let tail = [], tailDist = 0, tailLen = 0, tailBase = 0;
 let enemies = [], gems = [], parts = [], floats = [], fxs = [], rings = [], stars = [];
 let score = 0, mult = 1, comboT = 0, spawnT = 0, gemT = 8, newRecord = false, flash = 0, sparkT = 0;
@@ -457,12 +458,12 @@ const comboMax = () => 4.5 * (1 + 0.35 * pow.combo);
 let pow = { trail: 0, magnet: 0, echo: 0, combo: 0, sharp: 0 }, choosing = false, pendingOffer = false, offers = [];
 const ROMAN = ['', 'I', 'II', 'III'];
 const POW = {
-  trail: { name: 'Scia lunga', short: 'Scia', d: () => 'La scia si allunga del 25%: puoi chiudere nodi più grandi.' },
-  magnet: { name: 'Calamita', short: 'Calamita', d: l => l === 1 ? 'Il nodo cattura anche i nemici appena fuori dal bordo.' : 'La calamita arriva più lontano dal bordo del nodo.' },
-  echo: { name: 'Eco', short: 'Eco', d: l => l === 1 ? 'Ogni nodo riuscito colpisce i nemici vicini al suo bordo.' : 'L\'eco del nodo arriva più lontano.' },
+  trail: { name: 'Traccia lunga', short: 'Traccia', d: () => 'La traccia si allunga del 25%: puoi chiudere nodi più grandi.' },
+  magnet: { name: 'Calamita', short: 'Calamita', d: l => l === 1 ? 'Il nodo prende anche gli ostacoli appena fuori dal bordo.' : 'La calamita arriva più lontano dal bordo del nodo.' },
+  echo: { name: 'Eco', short: 'Eco', d: l => l === 1 ? 'Ogni nodo riuscito colpisce gli ostacoli vicini al suo bordo.' : 'L\'eco del nodo arriva più lontano.' },
   combo: { name: 'Combo lenta', short: 'Combo', d: () => 'Il moltiplicatore dura il 35% in più prima di azzerarsi.' },
-  sharp: { name: 'Scia tagliente', short: 'Taglio', d: l => l === 1 ? 'Le Lame non tagliano più la scia.' : l === 2 ? 'Una Lama che colpisce la scia viene distrutta.' : 'La scia rallenta i nemici che la toccano.' },
-  shield: { name: 'Scudo', short: '', d: () => 'Uno scudo subito: assorbe un colpo e spazza via i nemici vicini.' }
+  sharp: { name: 'Lamine affilate', short: 'Lamine', d: l => l === 1 ? 'Gli slittini non tagliano più la traccia.' : l === 2 ? 'Uno slittino che colpisce la traccia si ribalta e sparisce.' : 'La traccia rallenta gli ostacoli che la toccano.' },
+  shield: { name: 'Casco', short: '', d: () => 'Un casco subito: assorbe una caduta e spazza via gli ostacoli vicini.' }
 };
 function showPows() { $('pows').textContent = Object.keys(pow).filter(k => pow[k]).map(k => POW[k].short + ' ' + ROMAN[pow[k]]).join(' · '); }
 function offerPowers() {
@@ -507,7 +508,7 @@ function pickGoal(noShield) {
   const c = [], rec = daily ? dailyBest : best, k = daily ? 'daily' : 'best';
   if (rec > score) c.push({ kind: 'rec', label: 'Record', value: rec });
   for (const m of save.active) if (m.type === 'score' && !m.done && mTarget(m) > score) c.push({ kind: 'mission', label: 'Missione', value: mTarget(m) });
-  if (!noShield && shields < 2) c.push({ kind: 'shield', label: 'Scudo', value: nextShield });
+  if (!noShield && shields < 2) c.push({ kind: 'shield', label: 'Casco', value: nextShield });
   if (boardRows) for (const r of boardRows) if (r.id !== myId && r[k] > score && (!daily || r.day === today)) { const name = r.name.slice(0, 14); c.push({ kind: 'player', label: 'Supera ' + name, value: r[k], name }); }
   c.sort((a, b) => a.value - b.value);
   return c[0] || null;
@@ -516,7 +517,7 @@ const keys = {};
 let touch = null;
 function tailColor() {
   const sk = SKINS[save.skin] || SKINS[0], m = state === 'play' ? mult : 1;
-  if (!sk.cols) return hslHex((Math.floor((time * 45 + m * 25) / 15) * 15) % 360, 0.9, 0.68);
+  if (!sk.cols) return hslHex((Math.floor((time * 45 + m * 25) / 15) * 15) % 360, 0.8, 0.5);
   return sk.cols[m];
 }
 const speedF = () => 1 + Math.min(0.9, Math.max(0, wave - 1) * 0.05 + Math.max(0, wave - 6) * 0.03);
@@ -534,26 +535,28 @@ function resize() {
   tx = clamp(tx || px, 10, W - 10); ty = clamp(ty || py, 10, H - 10);
   bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
   const b = bg.getContext('2d'); b.scale(DPR, DPR);
-  const g = b.createRadialGradient(W * 0.5, H * 0.42, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
-  g.addColorStop(0, C.night); g.addColorStop(1, C.deep);
+  const g = b.createLinearGradient(0, 0, W * 0.6, H);
+  g.addColorStop(0, '#fbfdff'); g.addColorStop(1, '#e2ecf8');
   b.fillStyle = g; b.fillRect(0, 0, W, H);
-  const M = Math.max(W, H);
-  for (const [nx, ny, nr, col, na] of [[0.16, 0.2, 0.5, C.orchid, 0.17], [0.88, 0.3, 0.45, C.aqua, 0.1], [0.68, 0.92, 0.55, C.coral, 0.09], [0.08, 0.88, 0.4, C.aqua, 0.07]]) {
-    const ng = b.createRadialGradient(W * nx, H * ny, 0, W * nx, H * ny, M * nr);
-    ng.addColorStop(0, rgba(col, na)); ng.addColorStop(1, rgba(col, 0));
+  const rr = mulberry(11), M = Math.max(W, H);
+  for (let i = 0; i < 7; i++) {
+    const x = rr() * W, y = rr() * H, rad = M * (0.18 + rr() * 0.22), ng = b.createRadialGradient(x, y, 0, x, y, rad), dark = i % 2 === 0;
+    ng.addColorStop(0, dark ? rgba(C.shade, 0.55) : 'rgba(255,255,255,0.9)'); ng.addColorStop(1, dark ? rgba(C.shade, 0) : 'rgba(255,255,255,0)');
     b.fillStyle = ng; b.fillRect(0, 0, W, H);
   }
-  const step = 36 * S; b.fillStyle = C.ink; b.globalAlpha = 0.05;
-  for (let y = (H % step) / 2; y < H; y += step) for (let x = (W % step) / 2; x < W; x += step) b.fillRect(x - 1, y - 1, 2, 2);
-  b.globalAlpha = 1;
-  const vg = b.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.hypot(W, H) * 0.6);
-  vg.addColorStop(0, rgba(C.deep, 0)); vg.addColorStop(1, rgba(C.deep, 0.75));
-  b.fillStyle = vg; b.fillRect(0, 0, W, H);
-  stars = [];
-  for (let i = Math.round(120 * areaF); i > 0; i--) {
-    const z = rnd(0.15, 1);
-    stars.push({ x: rnd(0, W), y: rnd(0, H), z, s: z > 0.8 ? 2 : 1.2, a: rnd(0.3, 0.85) * z, sp: rnd(0.6, 2.6), ph: rnd(0, TAU) });
+  b.strokeStyle = rgba(C.ink, 0.04); b.lineWidth = 1; b.beginPath();
+  for (let x = 0.5; x < W; x += Math.max(4, 5 * S)) { b.moveTo(x, 0); b.lineTo(x, H); }
+  b.stroke();
+  for (let i = Math.round((W + H) / 70); i > 0; i--) {
+    const side = Math.floor(rr() * 3), t = rr(), tr = (17 + rr() * 15) * S, off = rr() * tr * 0.5 - tr * 0.2, rot = rr() * TAU;
+    const x = side === 0 ? off : side === 1 ? W - off : t * W, y = side === 2 ? H - off : 100 * S + t * (H - 100 * S);
+    b.fillStyle = rgba(C.ink, 0.14); b.beginPath(); b.ellipse(x + tr * 0.4, y + tr * 0.5, tr, tr * 0.8, 0, 0, TAU); b.fill();
+    b.fillStyle = C.pine; starPath(b, x, y, 9, tr, tr * 0.58, rot); b.fill();
+    b.fillStyle = '#2f8a69'; starPath(b, x, y, 9, tr * 0.64, tr * 0.34, rot + 0.3); b.fill();
+    b.fillStyle = 'rgba(255,255,255,0.92)'; starPath(b, x - tr * 0.06, y - tr * 0.08, 7, tr * 0.34, tr * 0.16, rot); b.fill();
   }
+  stars = [];
+  for (let i = Math.round(70 * areaF); i > 0; i--) stars.push({ x: rnd(0, W), y: rnd(0, H), s: Math.random() < 0.3 ? 2 : 1, a: rnd(0.4, 1), sp: rnd(0.8, 3), ph: rnd(0, TAU) });
 }
 
 function reset() {
@@ -615,7 +618,7 @@ function addScore(p) {
   score += p; run.score = score;
   while (score >= nextShield) {
     shieldStep++; nextShield += 3000 + 1000 * shieldStep;
-    if (shields < 2) { shields++; sfx.gotShield(); floatText(px, py - 40 * S, 'Scudo', 16 * S, C.ink); rings.push({ x: px, y: py, t: 0, max: 0.5, r: 70 * S, color: C.ink, w: 5 }); }
+    if (shields < 2) { shields++; sfx.gotShield(); floatText(px, py - 40 * S, 'Casco', 16 * S, C.red); rings.push({ x: px, y: py, t: 0, max: 0.5, r: 70 * S, color: C.ink, w: 5 }); }
   }
 }
 function track() {
@@ -631,7 +634,7 @@ function track() {
     }
   }
   if (save.stars !== before) {
-    for (const sk of SKINS) if (sk.need > before && sk.need <= save.stars) toast('Nuova scia sbloccata: ' + sk.name);
+    for (const sk of SKINS) if (sk.need > before && sk.need <= save.stars) toast('Nuova tuta sbloccata: ' + sk.name);
     persist();
   }
 }
@@ -699,7 +702,7 @@ function closeLoop(i, X, B) {
     if (e.type === 4 && solo && !e.small) {
       const a = rnd(0, TAU);
       for (const s of [1, -1]) { const c = mk(4, e.x, e.y, Math.cos(a) * 125 * S * s, Math.sin(a) * 125 * S * s); c.small = true; c.r = 8 * S; c.spawn = 0.45; }
-      if (state === 'play') floatText(e.x, e.y - 30 * S, 'Diviso', 13 * S, C.lime);
+      if (state === 'play') floatText(e.x, e.y - 30 * S, 'Spaccato', 13 * S, C.lime);
     }
   }
   let echoPts = 0;
@@ -730,7 +733,7 @@ function closeLoop(i, X, B) {
   pts += bossKill * 500 * mult + echoPts;
   addScore(pts);
   floatText(cx, cy, '+' + fmt(pts), (18 + Math.min(n, 8) * 3) * S, gem ? C.amber : C.ink);
-  const label = bossKill ? 'Nucleo distrutto' : close ? 'Al pelo  +50%' : n >= 8 ? 'NODO PERFETTO' : n >= 5 ? 'Super nodo' : n >= 3 ? 'Bel nodo' : '';
+  const label = bossKill ? 'Yeti battuto' : close ? 'Al pelo  +50%' : n >= 8 ? 'NODO PERFETTO' : n >= 5 ? 'Super nodo' : n >= 3 ? 'Bel nodo' : '';
   if (label) floatText(cx, cy - 40 * S, label, 16 * S, close ? C.amber : C.aqua);
   if (gem) { sfx.gem(); run.gems += gem; }
   if (n > 0) {
@@ -806,7 +809,7 @@ function spawnItem(it) {
 }
 function beginWave(w) {
   wave = w; queue = buildWave(w); spawnT = w === 1 ? 0.15 : 0.7; sinceSpawn = 0;
-  setBanner('Ondata ' + w, w % 5 === 0 ? 'Arriva un Nucleo' : bestWave > 1 && w === bestWave ? 'Il tuo massimo' : bestWave > 0 && w === bestWave + 1 ? 'Mai arrivato così lontano' : '');
+  setBanner('Discesa ' + w, w % 5 === 0 ? 'Arriva lo Yeti' : bestWave > 1 && w === bestWave ? 'Il tuo massimo' : bestWave > 0 && w === bestWave + 1 ? 'Mai arrivato così lontano' : '');
   sfx.wave();
 }
 function chase(e, max, acc, dt) {
@@ -828,7 +831,7 @@ function hitPlayer() {
   }
   enemies = enemies.filter(e => !e.dead);
   for (const e of enemies) if (e.mate && e.mate.dead) e.mate = null;
-  floatText(px, py - 40 * S, 'Scudo perso', 15 * S, C.ink);
+  floatText(px, py - 40 * S, 'Casco perso', 15 * S, C.ink);
 }
 
 /* ---------- update ---------- */
@@ -852,12 +855,12 @@ function update(dt) {
 
   if (alive) {
     const dx = tx - px, dy = ty - py, d = Math.hypot(dx, dy);
-    if (d > 0.01) { const sp = Math.min(620 * S, d * 14); pvx = dx / d * sp; pvy = dy / d * sp; px += pvx * dt; py += pvy * dt; }
+    if (d > 0.01) { const sp = Math.min(620 * S, d * 14); pvx = dx / d * sp; pvy = dy / d * sp; px += pvx * dt; py += pvy * dt; if (sp > 40 * S) heading = Math.atan2(pvy, pvx); }
     else { pvx *= 0.8; pvy *= 0.8; }
     sparkT -= dt;
     if (sparkT <= 0 && Math.hypot(pvx, pvy) > 140 * S && parts.length < 380) {
       sparkT = 0.03;
-      parts.push({ x: px + rnd(-3, 3), y: py + rnd(-3, 3), vx: -pvx * 0.1 + rnd(-30, 30), vy: -pvy * 0.1 + rnd(-30, 30), life: 0.45, max: 0.45, color: tailColor(), size: 2.2 * S });
+      parts.push({ x: px + rnd(-3, 3), y: py + rnd(-3, 3), vx: -pvx * 0.1 + rnd(-30, 30), vy: -pvy * 0.1 + rnd(-30, 30), life: 0.5, max: 0.5, color: Math.random() < 0.5 ? C.spray : '#ffffff', size: rnd(2, 3.6) * S });
     }
     addTail();
   }
@@ -873,7 +876,7 @@ function update(dt) {
     if (tut) {
       if (!enemies.length) {
         tut = false; tutDone = true; store.set('nodo_tut', '1');
-        setHint('Ottimo. Più nemici stringi insieme, più punti fai.', 4); breakT = 1.6;
+        setHint('Ottimo. Più ostacoli stringi insieme, più punti fai.', 4); breakT = 1.6;
       }
     } else if (breakT > 0) {
       breakT -= dt;
@@ -887,7 +890,7 @@ function update(dt) {
       }
       if (!queue.length && !enemies.some(e => e.type === 6) && (!enemies.length || (enemies.length <= 2 && sinceSpawn > 8))) {
         const bonus = 100 * wave; addScore(bonus); run.wave = wave;
-        setBanner('Ondata ' + wave + ' superata', '+' + fmt(bonus)); sfx.clear(); breakT = 1.5; pendingOffer = true; track();
+        setBanner('Discesa ' + wave + ' superata', '+' + fmt(bonus)); sfx.clear(); breakT = 1.5; pendingOffer = true; track();
       }
     }
     gemT -= dt;
@@ -978,7 +981,7 @@ function die() {
   if (g && g.value - score <= Math.max(500, g.value * 0.4)) lines.push('Mancavano ' + fmt(g.value - score) + ' punti ' + (g.kind === 'rec' ? (daily ? 'al tuo migliore di oggi' : 'al tuo record') : g.kind === 'player' ? 'per superare ' + g.name : 'alla missione'));
   if (!tut && wave > 0 && breakT <= 0) {
     const left = enemies.length + queue.reduce((a, it) => a + it.n, 0);
-    if (left > 0 && left <= 8) lines.push((left === 1 ? 'Mancava un nemico' : 'Mancavano ' + left + ' nemici') + ' alla fine dell\'ondata ' + wave);
+    if (left > 0 && left <= 8) lines.push((left === 1 ? 'Mancava un ostacolo' : 'Mancavano ' + left + ' ostacoli') + ' alla fine della discesa ' + wave);
   }
   nearText = lines.join('. ');
   if (wave > bestWave) { bestWave = wave; store.set('nodo_bw', String(bestWave)); }
@@ -995,17 +998,15 @@ function die() {
 }
 
 /* ---------- draw ---------- */
-const sprites = {};
-function glowSprite(color) {
-  if (sprites[color]) return sprites[color];
-  const c = document.createElement('canvas'); c.width = c.height = 96;
-  const g = c.getContext('2d'), gr = g.createRadialGradient(48, 48, 0, 48, 48, 48);
-  gr.addColorStop(0, rgba(color, 0.9)); gr.addColorStop(0.18, rgba(color, 0.42)); gr.addColorStop(0.5, rgba(color, 0.11)); gr.addColorStop(1, rgba(color, 0));
-  g.fillStyle = gr; g.fillRect(0, 0, 96, 96);
-  return (sprites[color] = c);
-}
-function glow(x, y, r, color, a) { ctx.globalAlpha = a; ctx.drawImage(glowSprite(color), x - r, y - r, r * 2, r * 2); }
 function polygon(n, r, rot) { ctx.beginPath(); for (let i = 0; i < n; i++) { const a = rot + i * TAU / n; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); } ctx.closePath(); }
+function starPath(c, x, y, n, ro, ri, rot) { c.beginPath(); for (let i = 0; i < n * 2; i++) { const a = rot + i * Math.PI / n, r = i % 2 ? ri : ro; c.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } c.closePath(); }
+function rrect(x, y, w, h, rad) { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, rad); else ctx.rect(x, y, w, h); }
+function shadow(x, y, r) { ctx.fillStyle = C.ink; ctx.globalAlpha = 0.13; ctx.beginPath(); ctx.ellipse(x + r * 0.35, y + r * 0.5, r * 1.05, r * 0.8, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; }
+function ball(r) { /* a white snowball with a shaded side */
+  ctx.fillStyle = C.spray; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(-r * 0.14, -r * 0.17, r * 0.83, 0, TAU); ctx.fill();
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 1.8 * S; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke();
+}
 
 function draw() {
   const tc = tailColor();
@@ -1013,12 +1014,11 @@ function draw() {
   ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   ctx.drawImage(bg, 0, 0, W, H);
 
-  /* stars, drifting slightly against the comet */
-  ctx.fillStyle = C.ink;
-  const ox = (px - W / 2) * 0.06, oy = (py - H / 2) * 0.06;
+  /* glints on the snow */
+  ctx.fillStyle = C.blue;
   for (const s of stars) {
-    ctx.globalAlpha = s.a * (0.55 + 0.45 * Math.sin(time * s.sp + s.ph));
-    ctx.fillRect(s.x - ox * s.z, s.y - oy * s.z, s.s, s.s);
+    ctx.globalAlpha = s.a * 0.4 * (0.5 + 0.5 * Math.sin(time * s.sp + s.ph));
+    ctx.fillRect(s.x - s.s, s.y, s.s * 2 + 1, 1); ctx.fillRect(s.x, s.y - s.s, 1, s.s * 2 + 1);
   }
   ctx.globalAlpha = 1;
   if (shake > 0.3) ctx.translate(rnd(-shake, shake), rnd(-shake, shake));
@@ -1034,7 +1034,7 @@ function draw() {
   }
 
   /* closing knots */
-  ctx.lineJoin = 'round';
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   for (const f of fxs) {
     const p = f.t / 0.5, e = p * p * p, k = 1 - e * 0.9, col = f.hit ? f.color : C.dim;
     ctx.beginPath();
@@ -1043,179 +1043,178 @@ function draw() {
       if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
     }
     ctx.closePath();
-    ctx.fillStyle = col; ctx.globalAlpha = (f.hit ? 0.3 : 0.1) * (1 - p); ctx.fill();
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.strokeStyle = col; ctx.globalAlpha = (f.hit ? 0.8 : 0.35) * (1 - p); ctx.lineWidth = (3 + 6 * (1 - p)) * S; ctx.stroke();
-    if (f.hit) { ctx.strokeStyle = C.ink; ctx.globalAlpha = 1 - p; ctx.lineWidth = 1.6 * S; ctx.stroke(); }
-    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = col; ctx.globalAlpha = (f.hit ? 0.24 : 0.08) * (1 - p); ctx.fill();
+    ctx.strokeStyle = col; ctx.globalAlpha = (f.hit ? 0.95 : 0.4) * (1 - p); ctx.lineWidth = (3 + 5 * (1 - p)) * S; ctx.stroke();
   }
 
   /* shockwaves */
-  ctx.globalCompositeOperation = 'lighter';
   for (const r of rings) {
     const p = r.t / r.max, e = 1 - (1 - p) * (1 - p);
-    ctx.globalAlpha = (1 - p) * 0.8; ctx.strokeStyle = r.color; ctx.lineWidth = (1 - p) * r.w * S + 0.5;
+    ctx.globalAlpha = (1 - p) * 0.65; ctx.strokeStyle = r.color; ctx.lineWidth = (1 - p) * r.w * S + 0.5;
     ctx.beginPath(); ctx.arc(r.x, r.y, r.r * e, 0, TAU); ctx.stroke();
   }
+  ctx.globalAlpha = 1;
 
-  /* gems */
+  /* edelweiss */
   for (const g of gems) {
     if (g.life < 2 && Math.sin(g.life * 22) < 0) continue;
-    const r = 13 * S * (1 + 0.1 * Math.sin(time * 5));
-    ctx.globalCompositeOperation = 'lighter';
-    glow(g.x, g.y, r * 3.6, C.amber, 0.5); glow(g.x, g.y, r * 2, C.ink, 0.5);
-    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.fillStyle = C.ink;
-    ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(time * 0.8);
-    ctx.beginPath();
-    for (let i = 0; i < 8; i++) { const rr = i % 2 ? r * 0.34 : r, a = i * TAU / 8; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
-    ctx.closePath(); ctx.fill();
-    ctx.rotate(-time * 1.5); ctx.globalAlpha = 0.5; ctx.fillRect(-r * 1.7, -0.6, r * 3.4, 1.2); ctx.fillRect(-0.6, -r * 1.7, 1.2, r * 3.4);
-    ctx.restore();
+    const r = 14 * S * (1 + 0.08 * Math.sin(time * 5));
+    shadow(g.x, g.y, r * 0.8);
+    ctx.strokeStyle = C.amber; ctx.globalAlpha = 0.5; ctx.lineWidth = 2 * S; ctx.beginPath(); ctx.arc(g.x, g.y, r * (1.5 + 0.2 * Math.sin(time * 3)), 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff'; ctx.lineWidth = 1.5 * S;
+    starPath(ctx, g.x, g.y, 7, r, r * 0.45, time * 0.5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.amber; ctx.beginPath(); ctx.arc(g.x, g.y, r * 0.3, 0, TAU); ctx.fill();
   }
-  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
 
-  /* tail */
+  /* ski track: a groove with two parallel lines, fading with age */
   if (alive && tail.length) {
     const n = tail.length;
-    ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = tc; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(tail[0].x, tail[0].y);
-    for (let i = 1; i < n; i++) ctx.lineTo(tail[i].x, tail[i].y);
-    ctx.lineTo(px, py);
-    ctx.globalAlpha = 0.09; ctx.lineWidth = 18 * S; ctx.stroke();
-    ctx.globalAlpha = 0.16; ctx.lineWidth = 8 * S; ctx.stroke();
-    ctx.lineCap = 'butt';
+    const whole = from => { ctx.beginPath(); ctx.moveTo(tail[from].x, tail[from].y); for (let i = from + 1; i < n; i++) ctx.lineTo(tail[i].x, tail[i].y); ctx.lineTo(px, py); };
+    ctx.lineCap = 'round'; whole(0); ctx.strokeStyle = C.ink; ctx.globalAlpha = 0.09; ctx.lineWidth = 12 * S; ctx.stroke();
+    ctx.lineCap = 'butt'; ctx.strokeStyle = tc;
     for (let i = 0; i < n; i += 3) {
       const k = (i + 3) / (n + 3);
-      ctx.globalAlpha = 0.3 + 0.7 * k; ctx.lineWidth = (1.1 + 2.7 * k) * S;
+      ctx.globalAlpha = 0.35 + 0.65 * k; ctx.lineWidth = 8 * S;
       ctx.beginPath(); ctx.moveTo(tail[i].x, tail[i].y);
       const end = Math.min(i + 3, n - 1);
       for (let j = i + 1; j <= end; j++) ctx.lineTo(tail[j].x, tail[j].y);
       if (end === n - 1) ctx.lineTo(px, py);
       ctx.stroke();
     }
-    const st = Math.floor(n * 0.55);
-    ctx.strokeStyle = C.ink; ctx.globalAlpha = 0.75; ctx.lineWidth = 1.3 * S; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(tail[st].x, tail[st].y);
-    for (let i = st + 1; i < n; i++) ctx.lineTo(tail[i].x, tail[i].y);
-    ctx.lineTo(px, py); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.lineCap = 'round'; whole(0); ctx.strokeStyle = C.snow; ctx.lineWidth = 3 * S; ctx.stroke();
 
-    /* closure preview: the part of the trail about to become a knot */
+    /* closure preview: the part of the track about to become a knot */
     if (preview && preview.i < n - 1) {
       const got = preview.hits.length;
-      ctx.strokeStyle = C.ink; ctx.globalAlpha = got ? 0.85 : 0.35; ctx.lineWidth = (got ? 3.2 : 2) * S;
+      ctx.strokeStyle = C.ink; ctx.globalAlpha = got ? 0.8 : 0.3; ctx.lineWidth = (got ? 2.4 : 1.6) * S;
       ctx.beginPath(); ctx.moveTo(preview.X.x, preview.X.y);
       for (let i = preview.i + 1; i < n; i++) ctx.lineTo(tail[i].x, tail[i].y);
       ctx.lineTo(px, py); ctx.stroke();
       ctx.setLineDash([5 * S, 6 * S]); ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(preview.X.x, preview.X.y); ctx.stroke(); ctx.setLineDash([]);
-      for (const e of preview.hits) { ctx.globalAlpha = 0.9; ctx.lineWidth = 2 * S; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 6 * S, 0, TAU); ctx.stroke(); }
-    }
-    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
-    if (preview && preview.hits.length > 1) {
-      ctx.font = '800 ' + Math.round(26 * S) + 'px ' + DISPLAY; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.globalAlpha = 0.55; ctx.fillStyle = C.ink; ctx.fillText(String(preview.hits.length), preview.cx, preview.cy); ctx.globalAlpha = 1;
+      for (const e of preview.hits) { ctx.globalAlpha = 0.85; ctx.lineWidth = 2 * S; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 7 * S, 0, TAU); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+      if (got > 1) {
+        ctx.font = '800 ' + Math.round(26 * S) + 'px ' + DISPLAY; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.globalAlpha = 0.4; ctx.fillStyle = C.ink; ctx.fillText(String(got), preview.cx, preview.cy); ctx.globalAlpha = 1;
+      }
     }
   }
 
-  /* links between paired enemies */
-  ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  /* ropes between roped climbers */
+  ctx.lineCap = 'round';
   for (const e of enemies) {
     if (e.type !== 5 || !e.mate || e.id > e.mate.id) continue;
-    ctx.strokeStyle = e.deny > 0 || e.mate.deny > 0 ? C.ink : C.rose;
-    ctx.globalAlpha = 0.25; ctx.lineWidth = 7 * S; ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.mate.x, e.mate.y); ctx.stroke();
-    ctx.globalAlpha = 0.8; ctx.lineWidth = 2 * S; ctx.setLineDash([3 * S, 7 * S]); ctx.lineDashOffset = time * 30; ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = e.deny > 0 || e.mate.deny > 0 ? C.red : C.ink;
+    ctx.globalAlpha = 0.85; ctx.lineWidth = 2.4 * S; ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.mate.x, e.mate.y); ctx.stroke();
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 1.2 * S; ctx.setLineDash([4 * S, 6 * S]); ctx.stroke(); ctx.setLineDash([]);
   }
-  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  ctx.globalAlpha = 1;
 
-  /* enemies */
+  /* obstacles */
   for (const e of enemies) {
+    const r = e.r;
     if (e.spawn > 0) {
       const p = Math.min(1, e.spawn / 0.8);
-      ctx.globalCompositeOperation = 'lighter';
-      glow(e.x, e.y, e.r * 3.2 * (1 - p) + 1, e.color, 0.7 * (1 - p));
-      ctx.strokeStyle = e.color; ctx.lineWidth = 2 * S;
-      ctx.globalAlpha = 1 - p; ctx.beginPath(); ctx.arc(e.x, e.y, e.r * (1 + p * 2.2), 0, TAU); ctx.stroke();
-      ctx.globalAlpha = (1 - p) * 0.4; ctx.beginPath(); ctx.arc(e.x, e.y, e.r * (1 + p * 4.5), 0, TAU); ctx.stroke();
-      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; continue;
+      ctx.fillStyle = C.shade; ctx.globalAlpha = 0.7 * (1 - p); ctx.beginPath(); ctx.arc(e.x, e.y, r * (1 - p), 0, TAU); ctx.fill();
+      ctx.strokeStyle = e.type === 0 || e.type === 3 ? C.ink : e.color; ctx.lineWidth = 2 * S;
+      ctx.globalAlpha = (1 - p) * 0.8; ctx.beginPath(); ctx.arc(e.x, e.y, r * (1 + p * 2.2), 0, TAU); ctx.stroke();
+      ctx.globalAlpha = (1 - p) * 0.3; ctx.beginPath(); ctx.arc(e.x, e.y, r * (1 + p * 4.5), 0, TAU); ctx.stroke();
+      ctx.globalAlpha = 1; continue;
     }
     if (e.type === 2 && e.st === 1) {
-      ctx.strokeStyle = C.amber; ctx.globalAlpha = 0.25 + 0.5 * (1 - e.tm / 0.75); ctx.lineWidth = 2 * S; ctx.setLineDash([8 * S, 8 * S]);
+      ctx.strokeStyle = C.sled; ctx.globalAlpha = 0.35 + 0.55 * (1 - e.tm / 0.75); ctx.lineWidth = 2.4 * S; ctx.setLineDash([8 * S, 8 * S]);
       ctx.lineDashOffset = -time * 60;
       ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + e.dx * 320 * S, e.y + e.dy * 320 * S); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
     }
-    const blink = e.inv > 0 ? 0.45 + 0.4 * Math.sin(time * 40) : 1, r = e.r;
-    ctx.globalCompositeOperation = 'lighter';
-    glow(e.x, e.y, r * 3.4, e.color, (e.type === 2 && e.st ? 0.85 : 0.55) * blink);
-    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = blink;
-    ctx.save(); ctx.translate(e.x, e.y);
-    ctx.fillStyle = e.color; ctx.strokeStyle = C.ink; ctx.lineWidth = 1.4 * S; ctx.lineJoin = 'round';
+    shadow(e.x, e.y, r);
+    const blink = e.inv > 0 ? 0.45 + 0.4 * Math.sin(time * 40) : 1, va = Math.atan2(e.vy, e.vx);
+    ctx.globalAlpha = blink;
+    ctx.save(); ctx.translate(e.x, e.y); ctx.lineJoin = 'round';
     if (e.type === 0) {
-      const rr = r * (1 + 0.07 * Math.sin(e.ang * 2));
-      ctx.beginPath(); ctx.arc(0, 0, rr, 0, TAU); ctx.fill();
-      ctx.globalAlpha = 0.45; ctx.stroke();
-      ctx.fillStyle = C.deep; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(0, 0, rr * 0.44, 0, TAU); ctx.fill();
-      ctx.fillStyle = C.ink; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(-rr * 0.38, -rr * 0.38, rr * 0.17, 0, TAU); ctx.fill();
-    } else if (e.type === 1 || (e.type === 3 && e.hp === 1)) {
-      ctx.rotate(Math.atan2(e.vy, e.vx));
-      const fl = r * (1.5 + 0.5 * Math.sin(time * 38 + e.ang * 7));
-      ctx.fillStyle = C.amber; ctx.globalAlpha = 0.75;
-      ctx.beginPath(); ctx.moveTo(-r * 0.45, r * 0.4); ctx.lineTo(-fl, 0); ctx.lineTo(-r * 0.45, -r * 0.4); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = e.color; ctx.globalAlpha = blink;
-      if (e.type === 3) polygon(6, r * 0.85, 0);
-      else { ctx.beginPath(); ctx.moveTo(r * 1.25, 0); ctx.lineTo(-r * 0.85, r * 0.95); ctx.lineTo(-r * 0.4, 0); ctx.lineTo(-r * 0.85, -r * 0.95); ctx.closePath(); }
-      ctx.fill(); ctx.globalAlpha = 0.45; ctx.stroke();
-      ctx.fillStyle = C.ink; ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(r * 0.3, 0, r * 0.2, 0, TAU); ctx.fill();
+      ball(r);
+      ctx.rotate(e.ang); ctx.strokeStyle = C.spray; ctx.lineWidth = 1.5 * S;
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, 1.2); ctx.stroke(); ctx.beginPath(); ctx.arc(0, 0, r * 0.5, Math.PI, Math.PI + 1.2); ctx.stroke();
+    } else if (e.type === 1) {
+      ctx.rotate(va); ctx.fillStyle = e.color; ctx.strokeStyle = e.color; ctx.lineWidth = 3 * S; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(-r * 1.0, 0); ctx.lineTo(-r * 1.9, Math.sin(time * 12 + e.ang) * r * 0.4); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-r * 0.1, 0, r * 1.15, r * 0.62, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(r * 0.7, -r * 0.6); ctx.lineTo(r * 0.5, -r * 0.2); ctx.lineTo(r * 1.05, -r * 0.3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(r * 0.7, r * 0.6); ctx.lineTo(r * 0.5, r * 0.2); ctx.lineTo(r * 1.05, r * 0.3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.arc(r * 0.95, 0, r * 0.5, 0, TAU); ctx.fill();
+      ctx.fillStyle = C.spray; ctx.beginPath(); ctx.ellipse(r * 1.4, 0, r * 0.28, r * 0.2, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = C.amber; ctx.beginPath(); ctx.arc(r * 1.05, -r * 0.22, r * 0.11, 0, TAU); ctx.arc(r * 1.05, r * 0.22, r * 0.11, 0, TAU); ctx.fill();
     } else if (e.type === 2) {
-      ctx.rotate(e.st === 2 ? Math.atan2(e.vy, e.vx) : e.ang * 0.6);
-      const sx = e.st === 2 ? 1.6 : 1.1, pu = e.st === 1 ? 1 + 0.14 * Math.sin(time * 34) : 1;
-      ctx.scale(pu, pu);
-      ctx.beginPath(); ctx.moveTo(r * sx, 0); ctx.lineTo(0, r * 0.8); ctx.lineTo(-r * sx, 0); ctx.lineTo(0, -r * 0.8); ctx.closePath(); ctx.fill();
-      ctx.globalAlpha = 0.55; ctx.stroke();
-      ctx.fillStyle = C.deep; ctx.globalAlpha = 0.55; ctx.rotate(Math.PI / 4); ctx.fillRect(-r * 0.26, -r * 0.26, r * 0.52, r * 0.52);
+      ctx.rotate(e.st === 2 ? va : Math.atan2(e.dy || e.vy, e.dx || e.vx));
+      const pu = e.st === 1 ? 1 + 0.12 * Math.sin(time * 34) : 1; ctx.scale(pu * (e.st === 2 ? 1.25 : 1), pu);
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 2 * S; ctx.lineCap = 'round';
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(-r * 1.2, r * 0.62 * s); ctx.lineTo(r * 1.15, r * 0.62 * s); ctx.quadraticCurveTo(r * 1.5, r * 0.62 * s, r * 1.45, r * 0.3 * s); ctx.stroke(); }
+      ctx.fillStyle = e.color; rrect(-r * 1.05, -r * 0.5, r * 2.1, r, r * 0.3); ctx.fill();
+      ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(-r * 0.15, 0, r * 0.42, 0, TAU); ctx.fill();
+      ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(r * 0.05, 0, r * 0.26, 0, TAU); ctx.fill();
+    } else if (e.type === 3 && e.hp > 1) {
+      ball(r);
+      ctx.rotate(e.ang * 0.3);
+      ctx.fillStyle = C.sled; ctx.beginPath(); ctx.moveTo(r * 0.2, -r * 0.14); ctx.lineTo(r * 1.0, 0); ctx.lineTo(r * 0.2, r * 0.14); ctx.closePath(); ctx.fill();
+      ctx.save(); ctx.globalAlpha = blink; ball(r * 0.6); ctx.restore();
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 2.2 * S; ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, TAU); ctx.stroke();
+      ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(0, 0, r * 0.36, 0, TAU); ctx.fill();
+      ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(0, 0, r * 0.14, 0, TAU); ctx.fill();
     } else if (e.type === 3) {
-      polygon(6, r, e.ang * 0.3); ctx.fill();
-      ctx.fillStyle = C.deep; ctx.globalAlpha = 0.5; polygon(6, r * 0.45, e.ang * 0.3); ctx.fill();
-      ctx.globalAlpha = 0.95; ctx.lineWidth = 3 * S; polygon(6, r * 1.4, -e.ang * 0.4); ctx.stroke();
+      ctx.rotate(va); ball(r * 0.85);
+      ctx.strokeStyle = C.red; ctx.lineWidth = 2.5 * S; ctx.beginPath(); ctx.arc(0, 0, r * 0.85, Math.PI * 0.65, Math.PI * 1.35); ctx.stroke();
+      ctx.fillStyle = C.sled; ctx.beginPath(); ctx.moveTo(r * 0.3, -r * 0.14); ctx.lineTo(r * 1.15, 0); ctx.lineTo(r * 0.3, r * 0.14); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(r * 0.25, -r * 0.3, r * 0.12, 0, TAU); ctx.arc(r * 0.25, r * 0.3, r * 0.12, 0, TAU); ctx.fill();
     } else if (e.type === 4) {
-      ctx.rotate(e.ang * 0.8);
-      const o = r * (0.42 + 0.08 * Math.sin(time * 6 + e.ang));
-      for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(o * s, 0, r * 0.72, 0, TAU); ctx.fill(); ctx.globalAlpha = 0.4; ctx.stroke(); ctx.globalAlpha = blink; }
-      ctx.fillStyle = C.deep; ctx.globalAlpha = 0.55; ctx.fillRect(-0.8 * S, -r * 0.6, 1.6 * S, r * 1.2);
+      ctx.rotate(e.ang * 0.5); ctx.fillStyle = e.color; polygon(6, r, 0); ctx.fill();
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 1.4 * S; ctx.globalAlpha = blink * 0.55; ctx.stroke(); ctx.globalAlpha = blink;
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.6 * S; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(0, -r * 0.85); ctx.lineTo(r * 0.15, -r * 0.2); ctx.lineTo(-r * 0.15, r * 0.25); ctx.lineTo(0, r * 0.85); ctx.stroke();
+      ctx.globalAlpha = blink * 0.7; ctx.beginPath(); ctx.moveTo(-r * 0.6, -r * 0.2); ctx.lineTo(-r * 0.35, -r * 0.5); ctx.stroke();
     } else if (e.type === 5) {
-      ctx.rotate(e.ang * 0.5);
-      if (e.deny > 0) ctx.fillStyle = C.ink;
-      ctx.fillRect(-r * 0.8, -r * 0.8, r * 1.6, r * 1.6); ctx.globalAlpha = 0.5; ctx.strokeRect(-r * 0.8, -r * 0.8, r * 1.6, r * 1.6);
-      ctx.fillStyle = C.deep; ctx.globalAlpha = 0.55; ctx.fillRect(-r * 0.3, -r * 0.3, r * 0.6, r * 0.6);
+      ctx.rotate(va);
+      ctx.fillStyle = C.ink; rrect(-r * 1.0, -r * 0.45, r * 0.6, r * 0.9, r * 0.2); ctx.fill();
+      ctx.fillStyle = e.deny > 0 ? C.red : e.color; ctx.beginPath(); ctx.arc(0, 0, r * 0.8, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = C.ink; ctx.lineWidth = 1.4 * S; ctx.beginPath(); ctx.arc(r * 0.15, 0, r * 0.42, 0, TAU); ctx.fill(); ctx.stroke();
     } else {
-      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill(); ctx.globalAlpha = 0.5; ctx.stroke();
-      ctx.fillStyle = C.deep; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(0, 0, r * 0.52, 0, TAU); ctx.fill();
-      const d = Math.hypot(px - e.x, py - e.y) || 1;
-      ctx.fillStyle = C.ink; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc((px - e.x) / d * r * 0.22, (py - e.y) / d * r * 0.22, r * 0.2, 0, TAU); ctx.fill();
-      ctx.globalAlpha = 0.95; ctx.lineWidth = 4 * S; ctx.lineCap = 'butt';
-      for (let k = 0; k < e.hp; k++) { const a0 = e.ang * 0.5 + k * TAU / e.hp; ctx.beginPath(); ctx.arc(0, 0, r * 1.32, a0, a0 + TAU / e.hp - 0.35); ctx.stroke(); }
+      ctx.save(); ctx.rotate(Math.atan2(py - e.y, px - e.x));
+      ctx.fillStyle = '#e9f1fa'; ctx.strokeStyle = C.ink; ctx.lineWidth = 1.6 * S;
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(r * 0.25 + Math.sin(time * 5) * r * 0.1 * s, r * 0.95 * s, r * 0.38, 0, TAU); ctx.fill(); ctx.stroke(); }
+      starPath(ctx, 0, 0, 14, r, r * 0.88, e.ang * 0.1); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = C.yeti; ctx.beginPath(); ctx.ellipse(r * 0.28, 0, r * 0.45, r * 0.52, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(r * 0.42, -r * 0.2, r * 0.13, 0, TAU); ctx.arc(r * 0.42, r * 0.2, r * 0.13, 0, TAU); ctx.fill();
+      ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(r * 0.46, -r * 0.2, r * 0.06, 0, TAU); ctx.arc(r * 0.46, r * 0.2, r * 0.06, 0, TAU); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = C.red; ctx.lineWidth = 4 * S; ctx.lineCap = 'butt';
+      for (let k = 0; k < e.hp; k++) { const a0 = e.ang * 0.5 + k * TAU / e.hp; ctx.beginPath(); ctx.arc(0, 0, r * 1.35, a0, a0 + TAU / e.hp - 0.35); ctx.stroke(); }
     }
     ctx.restore(); ctx.globalAlpha = 1;
   }
 
-  /* comet */
+  /* skier, seen from above */
   if (alive && !(invuln > 0 && Math.sin(time * 40) < -0.2)) {
-    const r = 7.5 * S, sp = Math.hypot(pvx, pvy), st = Math.min(0.45, sp / (1500 * S));
-    ctx.globalCompositeOperation = 'lighter';
-    glow(px, py, r * 6, tc, 0.75); glow(px, py, r * 2.8, C.ink, 0.55);
-    ctx.strokeStyle = C.ink; ctx.lineWidth = 1.6 * S;
-    for (let k = 0; k < shields; k++) { ctx.globalAlpha = 0.75; ctx.beginPath(); ctx.arc(px, py, r * (2.1 + k * 0.8), time * (k ? -2 : 2), time * (k ? -2 : 2) + TAU * 0.8); ctx.stroke(); }
-    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.fillStyle = C.ink;
-    ctx.save(); ctx.translate(px, py); ctx.rotate(Math.atan2(pvy, pvx)); ctx.scale(1 + st, 1 - st * 0.4);
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill(); ctx.restore();
+    const r = 12 * S;
+    shadow(px, py, r * 1.2);
+    ctx.strokeStyle = C.red; ctx.lineWidth = 2 * S; ctx.lineCap = 'round';
+    for (let k = 0; k < shields; k++) { const a0 = time * (k % 2 ? -2 : 2); ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(px, py, r * (2.1 + k * 0.6), a0, a0 + TAU * 0.8); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    ctx.save(); ctx.translate(px, py); ctx.rotate(heading);
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 1.3 * S;
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(r * 0.1, r * 0.7 * s); ctx.lineTo(-r * 1.3, r * 1.2 * s); ctx.stroke(); }
+    ctx.fillStyle = C.ink;
+    rrect(-r * 1.5, -r * 0.66, r * 3.3, r * 0.3, r * 0.15); ctx.fill();
+    rrect(-r * 1.5, r * 0.36, r * 3.3, r * 0.3, r * 0.15); ctx.fill();
+    ctx.fillStyle = tc; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.6 * S; ctx.beginPath(); ctx.ellipse(-r * 0.1, 0, r * 0.7, r * 0.8, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(r * 0.2, 0, r * 0.44, 0, TAU); ctx.fill();
+    ctx.fillStyle = C.amber; rrect(r * 0.38, -r * 0.3, r * 0.2, r * 0.6, r * 0.08); ctx.fill();
+    ctx.restore();
   }
 
-  /* particles as light streaks */
-  ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  /* snow spray and bursts */
   for (const p of parts) {
     const k = p.life / p.max;
-    ctx.globalAlpha = k; ctx.strokeStyle = p.color; ctx.lineWidth = p.size * (0.4 + 0.6 * k);
-    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.035 + 0.1, p.y - p.vy * 0.035); ctx.stroke();
+    ctx.globalAlpha = k * 0.9; ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.45 + 0.55 * k), 0, TAU); ctx.fill();
   }
-  ctx.globalCompositeOperation = 'source-over';
 
   /* floating scores */
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
@@ -1223,27 +1222,27 @@ function draw() {
     const p = f.t / 1.1, pop = Math.min(1, f.t / 0.12), y = f.y - p * 34 * S;
     ctx.globalAlpha = p < 0.7 ? 1 : 1 - (p - 0.7) / 0.3;
     ctx.font = '800 ' + Math.round(f.size * (0.6 + 0.4 * pop)) + 'px ' + DISPLAY;
-    ctx.strokeStyle = C.deep; ctx.lineWidth = 5 * S; ctx.strokeText(f.text, f.x, y);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5 * S; ctx.strokeText(f.text, f.x, y);
     ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, y);
   }
 
-  /* wave banner */
+  /* run banner */
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   if (banner && state === 'play') {
     const t = banner.t, a = Math.min(1, t / 0.25) * (t > 1.7 ? Math.max(0, 1 - (t - 1.7) / 0.5) : 1), y = H * 0.27;
     ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = '800 ' + Math.round(Math.min(34 * S, W / 13)) + 'px ' + DISPLAY;
-    ctx.strokeStyle = C.deep; ctx.lineWidth = 6 * S; ctx.strokeText(banner.text, W / 2, y);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6 * S; ctx.strokeText(banner.text, W / 2, y);
     ctx.fillStyle = C.ink; ctx.fillText(banner.text, W / 2, y);
-    if (banner.sub) { ctx.font = '800 ' + Math.round(17 * S) + 'px ' + DISPLAY; ctx.strokeText(banner.sub, W / 2, y + 38 * S); ctx.fillStyle = C.amber; ctx.fillText(banner.sub, W / 2, y + 38 * S); }
+    if (banner.sub) { ctx.font = '800 ' + Math.round(17 * S) + 'px ' + DISPLAY; ctx.strokeText(banner.sub, W / 2, y + 38 * S); ctx.fillStyle = C.red; ctx.fillText(banner.sub, W / 2, y + 38 * S); }
   }
 
-  /* flash and combo-coloured edge glow */
-  if (flash > 0.01) { ctx.globalAlpha = flash; ctx.fillStyle = C.ink; ctx.fillRect(0, 0, W, H); }
+  /* flash and combo-coloured edge tint */
+  if (flash > 0.01) { ctx.globalAlpha = flash * 0.35; ctx.fillStyle = tc; ctx.fillRect(0, 0, W, H); }
   ctx.globalAlpha = 1;
   if (state === 'play' && mult > 1) {
-    const a = (mult - 1) / 8 * 0.17 * (0.5 + 0.5 * clamp(comboT / comboMax(), 0, 1));
-    const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42, W / 2, H / 2, Math.hypot(W, H) * 0.58);
+    const a = (mult - 1) / 8 * 0.1 * (0.5 + 0.5 * clamp(comboT / comboMax(), 0, 1));
+    const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.5, W / 2, H / 2, Math.hypot(W, H) * 0.56);
     g.addColorStop(0, rgba(tc, 0)); g.addColorStop(1, rgba(tc, a));
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
@@ -1269,7 +1268,7 @@ function hud() {
   const gt = goal ? goal.label + ' tra ' + fmt(goal.value - score) : rec > 0 && score > rec ? 'Nuovo record +' + fmt(score - rec) : '';
   if (gt !== shownGoal) { shownGoal = gt; elGoal.textContent = gt; $('goalTrack').hidden = !goal; }
   if (goal) elGoalBar.style.transform = 'scaleX(' + clamp((score - goalFrom) / Math.max(1, goal.value - goalFrom), 0, 1).toFixed(3) + ')';
-  const w = tut ? 'Prova' : (daily ? 'Sfida · ' : '') + 'Ondata ' + Math.max(1, wave) + (bestWave > 0 ? ' · max ' + bestWave : '');
+  const w = tut ? 'Prova' : (daily ? 'Sfida · ' : '') + 'Discesa ' + Math.max(1, wave) + (bestWave > 0 ? ' · max ' + bestWave : '');
   if (w !== shownWave) { shownWave = w; elWave.textContent = w; }
   if (shields !== shownShields) { shownShields = shields; elShields.textContent = ''; for (let k = 0; k < shields; k++) elShields.append(document.createElement('i')); }
   elBar.style.transform = 'scaleX(' + clamp(comboT / comboMax(), 0, 1).toFixed(3) + ')';
@@ -1278,7 +1277,7 @@ const overlay = $('overlay'), pMenu = $('pMenu'), pOver = $('pOver'), pPause = $
 const panels = [pMenu, pOver, pPause, pHow, pMissions, pBoard, pChoice];
 function show(panel) { overlay.hidden = !panel; for (const p of panels) p.hidden = p !== panel; if (panel) panel.scrollTop = 0; }
 function refreshMenu() {
-  $('dailyInfo').textContent = 'La sfida del giorno ha le stesse ondate per tutti.' + (dailyBest ? ' Il tuo migliore di oggi: ' + fmt(dailyBest) + '.' : '');
+  $('dailyInfo').textContent = 'La sfida del giorno ha le stesse discese per tutti.' + (dailyBest ? ' Il tuo migliore di oggi: ' + fmt(dailyBest) + '.' : '');
 }
 function goMenu() { fillMissions(); reset(); state = 'menu'; paused = false; daily = false; $('hud').hidden = true; setHint(''); refreshMenu(); show(pMenu); }
 function start(isDaily) {
@@ -1291,7 +1290,7 @@ function start(isDaily) {
     tutC = { x: cx, y: cy, r };
     py = ty = Math.min(H - 60, cy + r + 90 * S);
     for (const o of [[-0.35, 0.1], [0.35, 0.1], [0, -0.35]]) { const e = mk(0, cx + o[0] * r, cy + o[1] * r, rnd(-5, 5), rnd(-5, 5)); e.spawn = 0.4; }
-    setHint('Gira attorno ai tre nemici e chiudi la scia su sé stessa');
+    setHint('Gira attorno alle tre palle di neve e chiudi la traccia su sé stessa');
   } else breakT = 0.7;
 }
 function openMissions() {
@@ -1309,7 +1308,7 @@ function openMissions() {
   show(pMissions);
 }
 function showOver() {
-  $('overTitle').textContent = daily ? 'Sfida del giorno' : 'Cometa spenta';
+  $('overTitle').textContent = daily ? 'Sfida del giorno' : 'Sei caduto';
   $('finalScore').textContent = fmt(score);
   $('bestLabel').textContent = daily ? 'Migliore di oggi' : 'Record';
   $('finalBest').textContent = fmt(daily ? dailyBest : best);
@@ -1371,7 +1370,7 @@ window.addEventListener('keyup', e => { keys[e.key.length === 1 ? e.key.toLowerC
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPause(true); });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 window.addEventListener('resize', resize);
-if (matchMedia('(pointer: coarse)').matches) $('ctrl').textContent = 'Trascina il dito ovunque sullo schermo: la cometa segue il movimento.';
+if (matchMedia('(pointer: coarse)').matches) $('ctrl').textContent = 'Trascina il dito ovunque sullo schermo: lo sciatore segue il movimento.';
 
 /* ---------- loop ---------- */
 let last = performance.now(), overShown = false;
