@@ -101,6 +101,13 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
 .sw[aria-pressed="true"] i{border-color:var(--ink)}
 .sw[aria-pressed="true"]{color:var(--ink)}
 .sw:disabled{cursor:default;opacity:.45}
+#pows{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);max-width:46vw}
+.cards{display:flex;flex-direction:column;gap:10px;width:100%}
+.card{display:flex;flex-direction:column;gap:5px;text-align:left;width:100%;box-sizing:border-box;padding:15px 16px;border-radius:18px;border:2px solid var(--line);
+  background:rgba(244,238,255,.06);color:var(--ink);font:500 14px/1.4 var(--body);cursor:pointer}
+.card:hover,.card:focus-visible{border-color:var(--aqua);outline:none;background:rgba(95,242,224,.1)}
+.card strong{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.03em}
+.card small{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
 @media (max-height:560px){.panel{padding:16px 18px;gap:9px}.logo{font-size:44px}}
 </style>
 
@@ -112,6 +119,7 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
       <div id="score">0</div>
       <div id="meta"><span id="wave">Ondata 1</span><span id="shields"></span></div>
       <div id="combo"><span id="mult">×1</span><span id="comboTrack"><span id="comboBar" style="display:block"></span></span></div>
+      <div id="pows"></div>
     </div>
     <div class="hud-right">
       <div class="hud-btns">
@@ -148,7 +156,7 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
 
     <div class="panel" id="pHow" hidden>
       <h2>Come si gioca</h2>
-      <p class="small">Chiudi la scia su sé stessa: tutto ciò che resta dentro viene catturato. I punti crescono col quadrato dei nemici presi insieme, e da due in su sale il moltiplicatore. Se chiudi con un nemico a un soffio dalla cometa il nodo vale il 50% in più.</p>
+      <p class="small">Chiudi la scia su sé stessa: tutto ciò che resta dentro viene catturato. I punti crescono col quadrato dei nemici presi insieme, e da due in su sale il moltiplicatore. Se chiudi con un nemico a un soffio dalla cometa il nodo vale il 50% in più. Alla fine di ogni ondata scegli un potenziamento fra due.</p>
       <ul class="list">
         <li><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#ff6b5e"/></svg><span>Vagante: rimbalza per il campo</span></li>
         <li><svg viewBox="0 0 16 16"><path d="M15 8 2 14l3-6-3-6z" fill="#d67bff"/></svg><span>Cacciatore: ti insegue</span></li>
@@ -195,6 +203,12 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
         <button class="btn" id="btnRetry" type="button">Riprova</button>
         <button class="btn alt" id="btnOverMenu" type="button">Menu</button>
       </div>
+    </div>
+
+    <div class="panel" id="pChoice" hidden>
+      <h2>Scegli un potenziamento</h2>
+      <div class="cards" id="cards"></div>
+      <p class="small">Vale fino alla fine della partita. Sceglierlo di nuovo lo fa salire di livello.</p>
     </div>
 
     <div class="panel" id="pPause" hidden>
@@ -439,7 +453,54 @@ let score = 0, mult = 1, comboT = 0, spawnT = 0, gemT = 8, newRecord = false, fl
 let wave = 0, queue = [], breakT = 0, sinceSpawn = 0, runSeed = 1, daily = false, banner = null;
 let shields = 0, nextShield = 2000, shieldStep = 0, invuln = 0, tut = false, tutC = null, hintT = 0, preview = null, eid = 0;
 let run = { knot: 0, mult: 1, wave: 0, score: 0, gems: 0, close: 0, boss: 0, pairs: 0 };
-const COMBO = 4.5;
+const comboMax = () => 4.5 * (1 + 0.35 * pow.combo);
+let pow = { trail: 0, magnet: 0, echo: 0, combo: 0, sharp: 0 }, choosing = false, pendingOffer = false, offers = [];
+const ROMAN = ['', 'I', 'II', 'III'];
+const POW = {
+  trail: { name: 'Scia lunga', short: 'Scia', d: () => 'La scia si allunga del 25%: puoi chiudere nodi più grandi.' },
+  magnet: { name: 'Calamita', short: 'Calamita', d: l => l === 1 ? 'Il nodo cattura anche i nemici appena fuori dal bordo.' : 'La calamita arriva più lontano dal bordo del nodo.' },
+  echo: { name: 'Eco', short: 'Eco', d: l => l === 1 ? 'Ogni nodo riuscito colpisce i nemici vicini al suo bordo.' : 'L\'eco del nodo arriva più lontano.' },
+  combo: { name: 'Combo lenta', short: 'Combo', d: () => 'Il moltiplicatore dura il 35% in più prima di azzerarsi.' },
+  sharp: { name: 'Scia tagliente', short: 'Taglio', d: l => l === 1 ? 'Le Lame non tagliano più la scia.' : l === 2 ? 'Una Lama che colpisce la scia viene distrutta.' : 'La scia rallenta i nemici che la toccano.' },
+  shield: { name: 'Scudo', short: '', d: () => 'Uno scudo subito: assorbe un colpo e spazza via i nemici vicini.' }
+};
+function showPows() { $('pows').textContent = Object.keys(pow).filter(k => pow[k]).map(k => POW[k].short + ' ' + ROMAN[pow[k]]).join(' · '); }
+function offerPowers() {
+  const r = mulberry((runSeed ^ Math.imul(wave + 7, 0x85EBCA6B)) >>> 0);
+  const ids = Object.keys(POW).map(k => [r(), k]).sort((a, b) => a[0] - b[0]).map(x => x[1]).filter(k => k === 'shield' ? shields < 3 : pow[k] < 3);
+  offers = ids.slice(0, 2);
+  if (!offers.length) return false;
+  const el = $('cards'); el.textContent = '';
+  offers.forEach((k, i) => {
+    const b = document.createElement('button'), n = document.createElement('strong'), l = document.createElement('small'), d = document.createElement('span');
+    const lv = k === 'shield' ? 0 : pow[k] + 1;
+    b.type = 'button'; b.className = 'card'; n.textContent = POW[k].name; l.textContent = lv ? 'Livello ' + lv + ' di 3' : 'Subito'; d.textContent = POW[k].d(lv);
+    b.append(n, l, d); b.addEventListener('click', () => pickPower(i)); el.append(b);
+  });
+  choosing = true; touch = null; show(pChoice);
+  return true;
+}
+function pickPower(i) {
+  const k = offers[i]; if (!choosing || !k) return;
+  if (k === 'shield') shields = Math.min(3, shields + 1);
+  else { pow[k]++; if (k === 'trail') tailLen += tailBase * 0.25; }
+  choosing = false; offers = []; breakT = 0.8; showPows(); sfx.gotShield(); show(null);
+  rings.push({ x: px, y: py, t: 0, max: 0.6, r: 110 * S, color: C.amber, w: 6 });
+  floatText(px, py - 44 * S, POW[k].name, 16 * S, C.amber);
+}
+function polyDist(x, y, p) {
+  let m = Infinity;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const a = p[j], b = p[i], dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy;
+    let t = l ? ((x - a.x) * dx + (y - a.y) * dy) / l : 0; t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const d = Math.hypot(x - a.x - dx * t, y - a.y - dy * t); if (d < m) m = d;
+  }
+  return m;
+}
+function touchTail(e) {
+  for (let k = tail.length - 1; k >= 0; k -= 2) if (Math.abs(tail[k].x - e.x) < e.r + 4 && Math.abs(tail[k].y - e.y) < e.r + 4) return true;
+  return false;
+}
 let bestWave = +store.get('nodo_bw', 0) || 0, goal = null, goalFrom = 0, goalScore = -1, nearText = '';
 /* the nearest thing worth reaching: record, a player above, a score mission, the next shield */
 function pickGoal(noShield) {
@@ -458,7 +519,7 @@ function tailColor() {
   if (!sk.cols) return hslHex((Math.floor((time * 45 + m * 25) / 15) * 15) % 360, 0.9, 0.68);
   return sk.cols[m];
 }
-const speedF = () => 1 + Math.min(0.7, Math.max(0, wave - 1) * 0.05);
+const speedF = () => 1 + Math.min(0.9, Math.max(0, wave - 1) * 0.05 + Math.max(0, wave - 6) * 0.03);
 
 function resize() {
   const r = stage.getBoundingClientRect();
@@ -505,6 +566,7 @@ function reset() {
   run = { knot: 0, mult: 1, wave: 0, score: 0, gems: 0, close: 0, boss: 0, pairs: 0 };
   timeScale = 1; shake = 0; newRecord = false; touch = null;
   goal = null; goalFrom = 0; goalScore = -1; nearText = '';
+  pow = { trail: 0, magnet: 0, echo: 0, combo: 0, sharp: 0 }; choosing = false; pendingOffer = false; offers = []; showPows();
 }
 
 /* ---------- geometry ---------- */
@@ -530,7 +592,8 @@ function polyInfo(poly) {
 }
 /* which enemies a loop would take: linked pairs only together */
 function captureSet(poly) {
-  const ins = enemies.filter(e => e.inv <= 0 && inPoly(e.x, e.y, poly)), set = new Set(ins), denied = [];
+  const mg = [0, 14, 24, 34][pow.magnet] * S;
+  const ins = enemies.filter(e => e.inv <= 0 && (inPoly(e.x, e.y, poly) || (mg && polyDist(e.x, e.y, poly) < mg))), set = new Set(ins), denied = [];
   for (const e of ins) if (e.type === 5 && e.mate && !set.has(e.mate)) denied.push(e);
   for (const e of denied) set.delete(e);
   return { hits: [...set], denied };
@@ -639,6 +702,16 @@ function closeLoop(i, X, B) {
       if (state === 'play') floatText(e.x, e.y - 30 * S, 'Diviso', 13 * S, C.lime);
     }
   }
+  let echoPts = 0;
+  if (n > 0 && pow.echo) {
+    const er = [0, 40, 65, 90][pow.echo] * S;
+    for (const e of enemies) {
+      if (e.dead || e.inv > 0 || e.type === 6 || e.spawn > 0 || polyDist(e.x, e.y, poly) > er) continue;
+      burst(e.x, e.y, C.orchid, 12, 240); rings.push({ x: e.x, y: e.y, t: 0, max: 0.35, r: e.r * 3, color: C.orchid, w: 3 });
+      if (e.hp > 1) { e.hp--; e.inv = 0.5; } else { e.dead = true; kills++; }
+      echoPts += 15 * mult;
+    }
+  }
   for (const e of cs.denied) { e.deny = 0.6; if (state === 'play') floatText(e.x, e.y - 26 * S, 'Insieme', 13 * S, C.rose); }
   enemies = enemies.filter(e => !e.dead);
   for (const e of enemies) if (e.mate && e.mate.dead) e.mate = null;
@@ -654,7 +727,7 @@ function closeLoop(i, X, B) {
   let pts = 10 * n * n * mult;
   if (gem && n > 0) pts *= 2; else if (gem) pts += 50 * mult * gem;
   if (close) pts = Math.round(pts * 1.5);
-  pts += bossKill * 500 * mult;
+  pts += bossKill * 500 * mult + echoPts;
   addScore(pts);
   floatText(cx, cy, '+' + fmt(pts), (18 + Math.min(n, 8) * 3) * S, gem ? C.amber : C.ink);
   const label = bossKill ? 'Nucleo distrutto' : close ? 'Al pelo  +50%' : n >= 8 ? 'NODO PERFETTO' : n >= 5 ? 'Super nodo' : n >= 3 ? 'Bel nodo' : '';
@@ -666,10 +739,10 @@ function closeLoop(i, X, B) {
     save.total += kills;
     if (n >= 2) mult = Math.min(9, mult + 1);
     run.mult = Math.max(run.mult, mult);
-    tailLen = Math.min(tailBase * 1.8, tailLen + 14 * S * n);
+    tailLen = Math.min(tailBase * (1.8 + 0.25 * pow.trail), tailLen + 14 * S * n);
     if (!reduceMotion) { shake = Math.min(14, 3 + n * 2); if (n >= 3) timeScale = 0.3; }
   }
-  comboT = COMBO;
+  comboT = comboMax();
   track();
   return true;
 }
@@ -697,7 +770,7 @@ function buildWave(w) {
   if (w >= 5) opts.push([4, 1.6]);
   if (w >= 6) opts.push([5, 1.3]);
   const tot = opts.reduce((s, o) => s + o[1], 0);
-  let budget = Math.round(Math.min(44, (5 + w * 2.1) * areaF));
+  let budget = Math.round(Math.min(54, (5 + w * 2.1 + Math.max(0, w - 5) * 1.2) * areaF));
   if (w % 5 === 0) q.push({ type: 6, side: Math.floor(r() * 4), f: r(), j: r(), n: 1 });
   if (w === 1) q.push({ type: 0, side: Math.floor(r() * 4), f: 0.3 + r() * 0.4, j: 0.5, n: 6, slow: true });
   for (let k = 0; k < 60 && budget > 0; k++) {
@@ -802,7 +875,10 @@ function update(dt) {
         tut = false; tutDone = true; store.set('nodo_tut', '1');
         setHint('Ottimo. Più nemici stringi insieme, più punti fai.', 4); breakT = 1.6;
       }
-    } else if (breakT > 0) { breakT -= dt; if (breakT <= 0) beginWave(wave + 1); }
+    } else if (breakT > 0) {
+      breakT -= dt;
+      if (breakT <= 0) { if (pendingOffer) { pendingOffer = false; if (!offerPowers()) beginWave(wave + 1); } else beginWave(wave + 1); }
+    }
     else {
       spawnT -= dt; sinceSpawn += dt;
       if (queue.length && spawnT <= 0) {
@@ -811,7 +887,7 @@ function update(dt) {
       }
       if (!queue.length && !enemies.some(e => e.type === 6) && (!enemies.length || (enemies.length <= 2 && sinceSpawn > 8))) {
         const bonus = 100 * wave; addScore(bonus); run.wave = wave;
-        setBanner('Ondata ' + wave + ' superata', '+' + fmt(bonus)); sfx.clear(); breakT = 2.6; track();
+        setBanner('Ondata ' + wave + ' superata', '+' + fmt(bonus)); sfx.clear(); breakT = 1.5; pendingOffer = true; track();
       }
     }
     gemT -= dt;
@@ -848,6 +924,8 @@ function update(dt) {
         if (parts.length < 400) parts.push({ x: e.x, y: e.y, vx: 0, vy: 0, life: 0.25, max: 0.25, color: C.amber, size: 5 * S });
         for (let k = tail.length - 2; k >= 0; k--) {
           if (Math.abs(tail[k].x - e.x) < e.r + 4 && Math.abs(tail[k].y - e.y) < e.r + 4) {
+            if (pow.sharp >= 2) { e.dead = true; burst(e.x, e.y, e.color, 18, 300); if (state === 'play') { addScore(20 * mult); floatText(e.x, e.y, '+' + 20 * mult, 14 * S, C.amber); sfx.cut(); } break; }
+            if (pow.sharp >= 1) break;
             burst(tail[k].x, tail[k].y, tailColor(), 10, 200); tail.splice(0, k + 1);
             tailDist = 0; for (let q = 1; q < tail.length; q++) tailDist += Math.hypot(tail[q].x - tail[q - 1].x, tail[q].y - tail[q - 1].y);
             if (state === 'play') sfx.cut(); break;
@@ -856,10 +934,14 @@ function update(dt) {
         if (e.tm <= 0) { e.st = 0; e.tm = rnd(1.6, 2.8); e.vx *= 0.06; e.vy *= 0.06; }
       }
     }
-    e.x += e.vx * dt; e.y += e.vy * dt;
+    if (pow.sharp >= 3 && e.type !== 6 && touchTail(e)) e.slow = 2;
+    if (e.slow > 0) e.slow -= dt;
+    const mv = e.slow > 0 ? 0.45 : 1;
+    e.x += e.vx * dt * mv; e.y += e.vy * dt * mv;
     if (e.x < e.r) { e.x = e.r; e.vx = Math.abs(e.vx); } else if (e.x > W - e.r) { e.x = W - e.r; e.vx = -Math.abs(e.vx); }
     if (e.y < e.r) { e.y = e.r; e.vy = Math.abs(e.vy); } else if (e.y > H - e.r) { e.y = H - e.r; e.vy = -Math.abs(e.vy); }
   }
+  enemies = enemies.filter(e => !e.dead);
   /* chasers keep apart */
   for (let i = 0; i < enemies.length; i++) {
     const a = enemies[i]; if (a.type !== 1 && !(a.type === 3 && a.hp === 1)) continue;
@@ -1160,7 +1242,7 @@ function draw() {
   if (flash > 0.01) { ctx.globalAlpha = flash; ctx.fillStyle = C.ink; ctx.fillRect(0, 0, W, H); }
   ctx.globalAlpha = 1;
   if (state === 'play' && mult > 1) {
-    const a = (mult - 1) / 8 * 0.17 * (0.5 + 0.5 * clamp(comboT / COMBO, 0, 1));
+    const a = (mult - 1) / 8 * 0.17 * (0.5 + 0.5 * clamp(comboT / comboMax(), 0, 1));
     const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42, W / 2, H / 2, Math.hypot(W, H) * 0.58);
     g.addColorStop(0, rgba(tc, 0)); g.addColorStop(1, rgba(tc, a));
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -1190,10 +1272,10 @@ function hud() {
   const w = tut ? 'Prova' : (daily ? 'Sfida · ' : '') + 'Ondata ' + Math.max(1, wave) + (bestWave > 0 ? ' · max ' + bestWave : '');
   if (w !== shownWave) { shownWave = w; elWave.textContent = w; }
   if (shields !== shownShields) { shownShields = shields; elShields.textContent = ''; for (let k = 0; k < shields; k++) elShields.append(document.createElement('i')); }
-  elBar.style.transform = 'scaleX(' + clamp(comboT / COMBO, 0, 1).toFixed(3) + ')';
+  elBar.style.transform = 'scaleX(' + clamp(comboT / comboMax(), 0, 1).toFixed(3) + ')';
 }
-const overlay = $('overlay'), pMenu = $('pMenu'), pOver = $('pOver'), pPause = $('pPause'), pHow = $('pHow'), pMissions = $('pMissions'), pBoard = $('pBoard');
-const panels = [pMenu, pOver, pPause, pHow, pMissions, pBoard];
+const overlay = $('overlay'), pMenu = $('pMenu'), pOver = $('pOver'), pPause = $('pPause'), pHow = $('pHow'), pMissions = $('pMissions'), pBoard = $('pBoard'), pChoice = $('pChoice');
+const panels = [pMenu, pOver, pPause, pHow, pMissions, pBoard, pChoice];
 function show(panel) { overlay.hidden = !panel; for (const p of panels) p.hidden = p !== panel; if (panel) panel.scrollTop = 0; }
 function refreshMenu() {
   $('dailyInfo').textContent = 'La sfida del giorno ha le stesse ondate per tutti.' + (dailyBest ? ' Il tuo migliore di oggi: ' + fmt(dailyBest) + '.' : '');
@@ -1238,13 +1320,13 @@ function showOver() {
   renderMissions($('overMissions'));
   show(pOver);
 }
-function setPause(p) { if (state !== 'play') return; paused = p; show(p ? pPause : null); }
+function setPause(p) { if (state !== 'play' || choosing) return; paused = p; show(p ? pPause : null); }
 
 /* ---------- input ---------- */
 function pos(e) { const r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
 window.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') touch = { id: e.pointerId, x: e.clientX, y: e.clientY }; });
 window.addEventListener('pointermove', e => {
-  if (state !== 'play' || paused) return;
+  if (state !== 'play' || paused || choosing) return;
   if (e.pointerType === 'mouse') { const p = pos(e); tx = p.x; ty = p.y; return; }
   if (!touch || touch.id !== e.pointerId) { touch = { id: e.pointerId, x: e.clientX, y: e.clientY }; return; }
   tx = clamp(tx + (e.clientX - touch.x) * 1.45, 10, W - 10); ty = clamp(ty + (e.clientY - touch.y) * 1.45, 10, H - 10);
@@ -1278,7 +1360,8 @@ window.addEventListener('keydown', e => {
   if ((k.startsWith('Arrow') || k === ' ') && state === 'play' && !paused) e.preventDefault();
   if (e.repeat) return;
   keys[k] = true;
-  if (k === 'p' || k === 'Escape') { if (state === 'play') setPause(!paused); }
+  if (choosing && (k === '1' || k === '2')) pickPower(+k - 1);
+  else if (k === 'p' || k === 'Escape') { if (state === 'play') setPause(!paused); }
   else if (k === ' ' || k === 'Enter') {
     if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
     if (state === 'menu' && !pMenu.hidden) start(false); else if (state === 'over' && overT > 0.45) start(daily); else if (paused) setPause(false);
@@ -1294,7 +1377,7 @@ if (matchMedia('(pointer: coarse)').matches) $('ctrl').textContent = 'Trascina i
 let last = performance.now(), overShown = false;
 function frame(now) {
   const dt = Math.min(0.034, (now - last) / 1000); last = now;
-  if (!paused) {
+  if (!paused && !choosing) {
     timeScale += (1 - timeScale) * Math.min(1, dt * 3.5);
     update(dt * timeScale);
   }
