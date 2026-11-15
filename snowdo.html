@@ -510,7 +510,7 @@ let shields = 0, nextShield = 2000, shieldStep = 0, invuln = 0, tut = false, tut
 let run = { knot: 0, mult: 1, wave: 0, score: 0, gems: 0, close: 0, boss: 0, pairs: 0, lift: 0 };
 const comboMax = () => 4.5 * (1 + 0.35 * pow.combo);
 let pow = { trail: 0, magnet: 0, echo: 0, combo: 0, sharp: 0 }, choosing = false, pendingOffer = false, offers = [];
-let cat = null, catT = 12, strips = [], lift = null, pendingLift = false, mini = null;
+let cats = [], catT = 12, strips = [], lift = null, pendingLift = false, mini = null;
 const ROMAN = ['', 'I', 'II', 'III'];
 const POW = {
   trail: { name: 'Traccia lunga', short: 'Traccia', d: () => 'La traccia si allunga del 25%: puoi chiudere nodi più grandi.' },
@@ -625,7 +625,7 @@ function reset() {
   timeScale = 1; shake = 0; newRecord = false; touch = null;
   goal = null; goalFrom = 0; goalScore = -1; nearText = '';
   pow = { trail: 0, magnet: 0, echo: 0, combo: 0, sharp: 0 }; choosing = false; pendingOffer = false; offers = []; showPows();
-  cat = null; catT = rnd(9, 14); strips = []; lift = null; pendingLift = false; mini = null;
+  cats = []; catT = rnd(9, 14); strips = []; lift = null; pendingLift = false; mini = null;
 }
 
 /* ---------- geometry ---------- */
@@ -900,17 +900,17 @@ function cutTailRect(x, y, hw, hh) {
     return;
   }
 }
-function updateCat(dt) {
-  const c = cat;
-  if (c.warn > 0) { c.warn -= dt; if (c.warn <= 0 && state === 'play') sfx.catGo((W + c.w * 2) / (130 * S)); return; }
-  c.x += c.dir * 130 * S * dt;
+const CATV = 175;
+function updateCat(c, dt) {
+  if (c.warn > 0) { c.warn -= dt; if (c.warn <= 0 && state === 'play') sfx.catGo((W + c.w * 2) / (CATV * S)); return; }
+  c.x += c.dir * CATV * S * dt;
   const hw = c.w / 2, hh = c.h / 2; let any = false;
   for (const e of enemies) if (e.type !== 6 && e.spawn <= 0 && Math.abs(e.x - c.x) < hw + e.r * 0.4 && Math.abs(e.y - c.y) < hh + e.r * 0.4) { e.dead = true; any = true; burst(e.x, e.y, e.color, 14, 240); }
   if (any) { enemies = enemies.filter(e => !e.dead); for (const e of enemies) if (e.mate && e.mate.dead) e.mate = null; }
   cutTailRect(c.x, c.y, hw, hh);
   if (state === 'play' && alive && Math.abs(px - c.x) < hw + 4 * S && Math.abs(py - c.y) < hh + 4 * S) hitPlayer();
   if (parts.length < 380) parts.push({ x: c.x - c.dir * hw, y: c.y + rnd(-hh, hh), vx: -c.dir * rnd(20, 70) * S, vy: rnd(-30, 30) * S, life: 0.6, max: 0.6, color: '#ffffff', size: rnd(2, 4) * S });
-  if (c.dir > 0 ? c.x > W + c.w : c.x < -c.w) { strips.push({ y: c.y, h: c.h, t: 0 }); cat = null; catT = rnd(15, 24); }
+  if (c.dir > 0 ? c.x > W + c.w : c.x < -c.w) { strips.push({ y: c.y, h: c.h, t: 0 }); c.gone = true; }
 }
 function band(y, h, x0, x1, a) {
   if (x1 <= x0) return;
@@ -921,8 +921,9 @@ function band(y, h, x0, x1, a) {
 }
 function drawGroomed() {
   for (const s of strips) band(s.y, s.h, 0, W, 1 - s.t / 14);
-  if (!cat) return;
-  const c = cat;
+  for (const c of cats) drawCatLane(c);
+}
+function drawCatLane(c) {
   if (c.warn <= 0) { band(c.y, c.h, c.dir > 0 ? 0 : c.x, c.dir > 0 ? c.x : W, 1); return; }
   ctx.fillStyle = C.amber; ctx.globalAlpha = 0.16 + 0.1 * Math.sin(time * 14); ctx.fillRect(0, c.y - c.h / 2, W, c.h);
   ctx.strokeStyle = C.amber; ctx.globalAlpha = 0.9; ctx.lineWidth = 2 * S; ctx.setLineDash([10 * S, 8 * S]); ctx.lineDashOffset = -time * 60 * c.dir;
@@ -934,8 +935,8 @@ function drawGroomed() {
   }
   ctx.globalAlpha = 1;
 }
-function drawCat() {
-  const c = cat; if (!c || c.warn > 0) return;
+function drawCat(c) {
+  if (c.warn > 0) return;
   const w = c.w, h = c.h;
   ctx.fillStyle = C.ink; ctx.globalAlpha = 0.16; ctx.fillRect(c.x - w / 2 + 6 * S, c.y - h / 2 + 9 * S, w, h); ctx.globalAlpha = 1;
   ctx.save(); ctx.translate(c.x, c.y); ctx.scale(c.dir, 1);
@@ -943,7 +944,7 @@ function drawCat() {
   ctx.fillStyle = C.ink;
   for (const s of [-1, 1]) { rrect(-w * 0.44, s > 0 ? h * 0.26 : -h * 0.5, w * 0.84, h * 0.24, h * 0.1); ctx.fill(); }
   ctx.strokeStyle = '#7b8798'; ctx.lineWidth = 1.5 * S; ctx.beginPath();
-  for (let i = 0; i < 9; i++) { const x = -w * 0.42 + ((i * w * 0.1 - time * 130 * S) % (w * 0.8) + w * 0.8) % (w * 0.8); ctx.moveTo(x, -h * 0.5); ctx.lineTo(x, -h * 0.26); ctx.moveTo(x, h * 0.26); ctx.lineTo(x, h * 0.5); }
+  for (let i = 0; i < 9; i++) { const x = -w * 0.42 + ((i * w * 0.1 - time * CATV * S) % (w * 0.8) + w * 0.8) % (w * 0.8); ctx.moveTo(x, -h * 0.5); ctx.lineTo(x, -h * 0.26); ctx.moveTo(x, h * 0.26); ctx.lineTo(x, h * 0.5); }
   ctx.stroke();
   ctx.fillStyle = C.red; rrect(-w * 0.36, -h * 0.3, w * 0.7, h * 0.6, h * 0.1); ctx.fill();
   ctx.fillStyle = '#b5302a'; rrect(-w * 0.36, -h * 0.3, w * 0.3, h * 0.6, h * 0.1); ctx.fill();
@@ -1167,9 +1168,17 @@ function update(dt) {
     }
     else {
       catT -= dt;
-      if (!cat && catT <= 0 && wave >= 2) {
-        const h = 62 * S, w = 108 * S, dir = Math.random() < 0.5 ? 1 : -1;
-        cat = { warn: 1.7, y: clamp(py + rnd(-150, 150) * S, 130 * S + h, H - h), dir, w, h, x: dir > 0 ? -w : W + w };
+      if (!cats.length && catT <= 0 && wave >= 2) {
+        /* one groomer at first, two from run 5, up to three from run 9, each in its own band */
+        const h = 62 * S, w = 108 * S, lo = 130 * S + h, hi = H - h;
+        const n = 1 + (wave >= 5 && Math.random() < 0.45 + (wave - 5) * 0.08 ? 1 : 0) + (wave >= 9 && Math.random() < 0.45 ? 1 : 0);
+        for (let k = 0; k < n; k++) {
+          let y = clamp(py + rnd(-150, 150) * S, lo, hi);
+          for (let tries = 0; k > 0 && tries < 14; tries++) { y = rnd(lo, hi); if (cats.every(c => Math.abs(c.y - y) > h * 1.9)) break; if (tries === 13) y = -1; }
+          if (y < 0) break;
+          const dir = Math.random() < 0.5 ? 1 : -1;
+          cats.push({ warn: 1.7 + k * 0.35, y, dir, w, h, x: dir > 0 ? -w : W + w, gone: false });
+        }
         sfx.catWarn();
       }
       spawnT -= dt; sinceSpawn += dt;
@@ -1249,7 +1258,11 @@ function update(dt) {
       if (d > 0 && d < min) { const p = (min - d) / d * 0.5; a.x -= dx * p; a.y -= dy * p; b.x += dx * p; b.y += dy * p; }
     }
   }
-  if (cat) updateCat(dt);
+  if (cats.length) {
+    for (const c of cats) updateCat(c, dt);
+    cats = cats.filter(c => !c.gone);
+    if (!cats.length) catT = Math.max(8, rnd(14, 22) - wave * 0.5);
+  }
   for (const q of strips) q.t += dt;
   strips = strips.filter(q => q.t < 14);
   /* contact */
@@ -1499,7 +1512,7 @@ function draw() {
     ctx.restore(); ctx.globalAlpha = 1;
   }
 
-  drawCat();
+  for (const c of cats) drawCat(c);
   /* skier, seen from above */
   if (alive && !(invuln > 0 && Math.sin(time * 40) < -0.2)) {
     const r = 12 * S;
