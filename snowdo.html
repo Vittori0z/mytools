@@ -203,7 +203,7 @@ body{margin:0;background:var(--snow);color:var(--ink);font-family:var(--body);ov
       <h2 id="overTitle">Sei caduto</h2>
       <div class="record" id="newRec" hidden>Nuovo record</div>
       <div class="big" id="finalScore">0</div>
-      <div class="stats"><span><span id="bestLabel">Record</span> <b id="finalBest">0</b></span><span>Pista <b id="finalWave">Blu 1</b></span><span>Nodo migliore <b id="finalKnot">0</b></span></div>
+      <div class="stats"><span><span id="bestLabel">Record</span> <b id="finalBest">0</b></span><span>Pista <b id="finalWave">Blu 1</b></span><span>Nodo migliore <b id="finalKnot">0</b></span><span>Durata <b id="finalTime">0:00</b></span></div>
       <p class="near" id="nearMiss" hidden></p>
       <ul class="list" id="overMissions"></ul>
       <div class="row">
@@ -583,7 +583,8 @@ function pickGoal(noShield) {
   return c[0] || null;
 }
 const keys = {};
-let touch = null, mouseX = 0, mouseY = 0;
+let touch = null, mouseX = 0, mouseY = 0, playT = 0;
+const fmtTime = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
 function tailColor() {
   const sk = SKINS[save.skin] || SKINS[0], m = state === 'play' ? mult : 1;
   if (!sk.cols) return hslHex((Math.floor((time * 45 + m * 25) / 15) * 15) % 360, 0.8, 0.5);
@@ -648,7 +649,7 @@ function reset() {
   shields = 0; nextShield = 2000; shieldStep = 0; invuln = 0; tut = false; tutC = null; hintT = 0;
   run = { knot: 0, mult: 1, wave: 0, score: 0, gems: 0, close: 0, boss: 0, pairs: 0, lift: 0, off: 0, flip: 0 };
   timeScale = 1; shake = 0; newRecord = false; touch = null;
-  goal = null; goalFrom = 0; goalScore = -1; nearText = '';
+  goal = null; goalFrom = 0; goalScore = -1; nearText = ''; playT = 0;
   pow = { trail: 0, magnet: 0, echo: 0, combo: 0, sharp: 0 }; choosing = false; pendingOffer = false; offers = []; showPows();
   cats = []; catT = rnd(9, 14); strips = []; lift = null; pendingLift = false; mini = null;
   side = null; hold = false; boost = {}; fall = null; cheer = 0; showPows();
@@ -1490,7 +1491,7 @@ function drawGate(l) {
 function shareText() {
   return ['Snowdo ⛷️' + (daily ? ' sfida del ' + today.split('-').reverse().slice(0, 2).join('/') : ''),
     'Pista ' + pisteName(wave).toLowerCase() + ', discesa ' + Math.max(1, wave),
-    fmt(score) + ' punti · nodo migliore da ' + run.knot].join('\n');
+    fmt(score) + ' punti · nodo migliore da ' + run.knot + ' · ' + fmtTime(playT) + ' di gioco'].join('\n');
 }
 
 /* ---------- update ---------- */
@@ -2034,6 +2035,7 @@ function showOver() {
   $('finalBest').textContent = fmt(daily ? dailyBest : best);
   $('finalWave').textContent = pisteName(wave) + ' ' + Math.max(1, wave);
   $('finalKnot').textContent = run.knot;
+  $('finalTime').textContent = fmtTime(playT);
   $('newRec').hidden = !newRecord;
   $('nearMiss').textContent = nearText; $('nearMiss').hidden = !nearText;
   renderMissions($('overMissions'));
@@ -2116,6 +2118,7 @@ if (matchMedia('(pointer: coarse)').matches) $('ctrl').textContent = 'Trascina i
 let last = performance.now(), overShown = false;
 function frame(now) {
   const dt = Math.min(0.034, (now - last) / 1000); last = now;
+  if (state === 'play' && !paused) playT += dt;
   if (!paused && !choosing) {
     timeScale += (1 - timeScale) * Math.min(1, dt * 3.5);
     update(dt * timeScale);
