@@ -41,8 +41,13 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
   font-variant-numeric:tabular-nums}
 #comboTrack{width:84px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
 #comboBar{width:100%;height:100%;background:var(--aqua);transform-origin:left center}
-.hud-right{display:flex;align-items:center;gap:8px;pointer-events:auto}
-#best{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-variant-numeric:tabular-nums;margin-right:4px;white-space:nowrap}
+.hud-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:0}
+.hud-btns{display:flex;gap:8px;pointer-events:auto}
+#goal{display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:100%}
+#goalText{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-shadow:0 1px 8px var(--deep)}
+#goalTrack{width:120px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+#goalBar{display:block;width:100%;height:100%;background:var(--amber);transform-origin:left center}
+.near{margin:0;color:var(--amber);font-weight:700;font-size:14px;line-height:1.4;text-wrap:balance}
 .icon{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:rgba(16,9,44,.55);color:var(--ink);
   display:grid;place-items:center;cursor:pointer;padding:0}
 .icon:focus-visible,.btn:focus-visible,.ghost:focus-visible,.sw:focus-visible{outline:2px solid var(--aqua);outline-offset:3px}
@@ -109,13 +114,15 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
       <div id="combo"><span id="mult">×1</span><span id="comboTrack"><span id="comboBar" style="display:block"></span></span></div>
     </div>
     <div class="hud-right">
-      <span id="best">Record 0</span>
+      <div class="hud-btns">
       <button class="icon" id="btnSound" type="button" aria-label="Audio" aria-pressed="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7"/><path class="wave" d="M19 6a8.5 8.5 0 0 1 0 12"/></svg>
       </button>
       <button class="icon" id="btnPause" type="button" aria-label="Pausa">
         <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
       </button>
+      </div>
+      <div id="goal"><span id="goalText"></span><span id="goalTrack"><span id="goalBar"></span></span></div>
     </div>
   </div>
 
@@ -182,6 +189,7 @@ body{margin:0;background:var(--deep);color:var(--ink);font-family:var(--body);ov
       <div class="record" id="newRec" hidden>Nuovo record</div>
       <div class="big" id="finalScore">0</div>
       <div class="stats"><span><span id="bestLabel">Record</span> <b id="finalBest">0</b></span><span>Ondata <b id="finalWave">1</b></span><span>Nodo migliore <b id="finalKnot">0</b></span></div>
+      <p class="near" id="nearMiss" hidden></p>
       <ul class="list" id="overMissions"></ul>
       <div class="row">
         <button class="btn" id="btnRetry" type="button">Riprova</button>
@@ -253,13 +261,13 @@ const SKINS = [
 if (!SKINS[save.skin] || SKINS[save.skin].need > save.stars) save.skin = 0;
 
 const MDEF = {
-  knot: { t: [4, 5, 6, 8, 10], txt: n => 'Cattura ' + n + ' nemici in un solo nodo' },
-  mult: { t: [3, 5, 7, 9], txt: n => 'Arriva al moltiplicatore ×' + n },
-  wave: { t: [2, 4, 6, 9, 12], txt: n => 'Supera l\'ondata ' + n },
-  score: { t: [1000, 3000, 8000, 20000], txt: n => 'Fai ' + fmt(n) + ' punti in una partita' },
+  knot: { t: [3, 4, 5, 6, 8, 10], txt: n => 'Cattura ' + n + ' nemici in un solo nodo' },
+  mult: { t: [2, 3, 4, 5, 7, 9], txt: n => 'Arriva al moltiplicatore ×' + n },
+  wave: { t: [1, 2, 3, 4, 6, 8, 10, 12], txt: n => 'Supera l\'ondata ' + n },
+  score: { t: [500, 1000, 2000, 3500, 6000, 10000, 20000], txt: n => 'Fai ' + fmt(n) + ' punti in una partita' },
   gems: { t: [1, 2, 3], txt: n => n === 1 ? 'Chiudi una gemma in un nodo' : 'Chiudi ' + n + ' gemme in una partita' },
   close: { t: [1, 3, 5], txt: n => n === 1 ? 'Chiudi un nodo al pelo' : 'Chiudi ' + n + ' nodi al pelo in una partita' },
-  total: { t: [50, 150, 400, 1000], txt: n => 'Cattura ' + fmt(n) + ' nemici in totale' },
+  total: { t: [20, 50, 100, 200, 400, 1000], txt: n => 'Cattura ' + fmt(n) + ' nemici in totale' },
   boss: { t: [1, 2], txt: n => n === 1 ? 'Sconfiggi un Nucleo' : 'Sconfiggi ' + n + ' Nuclei in una partita', gate: 3 },
   pairs: { t: [1, 3], txt: n => n === 1 ? 'Cattura una coppia di Legati' : 'Cattura ' + n + ' coppie di Legati in una partita', gate: 3 }
 };
@@ -364,6 +372,7 @@ let db = null, userApi = null, myId = null, myDoc = null, cloud = false;
     const id = await r[1].id(); if (!id) return;
     db = r[0]; userApi = r[1]; myId = id; cloud = true;
     try { const s = await db.doc('scores/' + myId).get(); if (s.exists) myDoc = s.data(); } catch (e) {}
+    try { boardRows = await fetchRows(); } catch (e) {}
   } catch (e) { cloud = false; }
 })();
 const num = v => (typeof v === 'number' && isFinite(v) && v > 0) ? Math.floor(v) : 0;
@@ -378,19 +387,22 @@ function submitScore() {
   db.doc('scores/' + myId).set(d).catch(() => {});
 }
 let boardTab = 'all', boardRows = null;
+async function fetchRows() {
+  const snap = await db.collection('scores').limit(200).get();
+  const rows = snap.docs.map(d => Object.assign({ id: d.id, name: '' }, saneRow(d.data())));
+  const top = k => rows.slice().sort((a, b) => b[k] - a[k]).slice(0, 20);
+  const ids = [...new Set(top('best').concat(top('daily')).map(r => r.id))];
+  let ps = {}; try { ps = await userApi.profiles(ids); } catch (e) {}
+  for (const r of rows) { const p = ps[r.id]; r.name = (p && p.name) || 'Giocatore'; }
+  return rows;
+}
 async function openBoard() {
   show(pBoard); boardRows = null; renderBoard();
   if (!cloud) return;
   $('boardStatus').textContent = 'Carico la classifica…';
   const timer = setTimeout(() => { if (!boardRows) $('boardStatus').textContent = 'La classifica non risponde. Riprova tra poco.'; }, 10000);
   try {
-    const snap = await db.collection('scores').limit(200).get();
-    const rows = snap.docs.map(d => Object.assign({ id: d.id, name: '' }, saneRow(d.data())));
-    const top = k => rows.slice().sort((a, b) => b[k] - a[k]).slice(0, 20);
-    const ids = [...new Set(top('best').concat(top('daily')).map(r => r.id))];
-    let ps = {}; try { ps = await userApi.profiles(ids); } catch (e) {}
-    for (const r of rows) { const p = ps[r.id]; r.name = (p && p.name) || 'Giocatore'; }
-    boardRows = rows; clearTimeout(timer); renderBoard();
+    boardRows = await fetchRows(); clearTimeout(timer); renderBoard();
   } catch (e) { clearTimeout(timer); $('boardStatus').textContent = 'La classifica non risponde. Riprova tra poco.'; }
 }
 function renderBoard() {
@@ -428,6 +440,17 @@ let wave = 0, queue = [], breakT = 0, sinceSpawn = 0, runSeed = 1, daily = false
 let shields = 0, nextShield = 2000, shieldStep = 0, invuln = 0, tut = false, tutC = null, hintT = 0, preview = null, eid = 0;
 let run = { knot: 0, mult: 1, wave: 0, score: 0, gems: 0, close: 0, boss: 0, pairs: 0 };
 const COMBO = 4.5;
+let bestWave = +store.get('nodo_bw', 0) || 0, goal = null, goalFrom = 0, goalScore = -1, nearText = '';
+/* the nearest thing worth reaching: record, a player above, a score mission, the next shield */
+function pickGoal(noShield) {
+  const c = [], rec = daily ? dailyBest : best, k = daily ? 'daily' : 'best';
+  if (rec > score) c.push({ kind: 'rec', label: 'Record', value: rec });
+  for (const m of save.active) if (m.type === 'score' && !m.done && mTarget(m) > score) c.push({ kind: 'mission', label: 'Missione', value: mTarget(m) });
+  if (!noShield && shields < 2) c.push({ kind: 'shield', label: 'Scudo', value: nextShield });
+  if (boardRows) for (const r of boardRows) if (r.id !== myId && r[k] > score && (!daily || r.day === today)) { const name = r.name.slice(0, 14); c.push({ kind: 'player', label: 'Supera ' + name, value: r[k], name }); }
+  c.sort((a, b) => a.value - b.value);
+  return c[0] || null;
+}
 const keys = {};
 let touch = null;
 function tailColor() {
@@ -481,6 +504,7 @@ function reset() {
   shields = 0; nextShield = 2000; shieldStep = 0; invuln = 0; tut = false; tutC = null; hintT = 0;
   run = { knot: 0, mult: 1, wave: 0, score: 0, gems: 0, close: 0, boss: 0, pairs: 0 };
   timeScale = 1; shake = 0; newRecord = false; touch = null;
+  goal = null; goalFrom = 0; goalScore = -1; nearText = '';
 }
 
 /* ---------- geometry ---------- */
@@ -675,6 +699,7 @@ function buildWave(w) {
   const tot = opts.reduce((s, o) => s + o[1], 0);
   let budget = Math.round(Math.min(44, (5 + w * 2.1) * areaF));
   if (w % 5 === 0) q.push({ type: 6, side: Math.floor(r() * 4), f: r(), j: r(), n: 1 });
+  if (w === 1) q.push({ type: 0, side: Math.floor(r() * 4), f: 0.3 + r() * 0.4, j: 0.5, n: 6, slow: true });
   for (let k = 0; k < 60 && budget > 0; k++) {
     let x = r() * tot, type = 0;
     for (const o of opts) { if ((x -= o[1]) < 0) { type = o[0]; break; } }
@@ -688,7 +713,7 @@ function buildWave(w) {
 function spawnItem(it) {
   let p = edgePos(it.side, it.f);
   if (Math.hypot(p.x - px, p.y - py) < 230 * S) p = edgePos((it.side + 2) % 4, 1 - it.f);
-  const a = Math.atan2(H / 2 - p.y, W / 2 - p.x) + (it.j - 0.5) * 1.7, c = Math.cos(a), s = Math.sin(a), v = (46 + it.j * 34) * S * speedF();
+  const a = Math.atan2(H / 2 - p.y, W / 2 - p.x) + (it.j - 0.5) * 1.7, c = Math.cos(a), s = Math.sin(a), v = (46 + it.j * 34) * S * speedF() * (it.slow ? 0.6 : 1);
   if (it.type === 0) {
     for (let k = 0; k < it.n; k++) {
       const aa = a + rnd(-0.12, 0.12), sp = it.n > 1 ? 34 * S : 0;
@@ -707,8 +732,8 @@ function spawnItem(it) {
   }
 }
 function beginWave(w) {
-  wave = w; queue = buildWave(w); spawnT = 0.7; sinceSpawn = 0;
-  setBanner('Ondata ' + w, w % 5 === 0 ? 'Arriva un Nucleo' : '');
+  wave = w; queue = buildWave(w); spawnT = w === 1 ? 0.15 : 0.7; sinceSpawn = 0;
+  setBanner('Ondata ' + w, w % 5 === 0 ? 'Arriva un Nucleo' : bestWave > 1 && w === bestWave ? 'Il tuo massimo' : bestWave > 0 && w === bestWave + 1 ? 'Mai arrivato così lontano' : '');
   sfx.wave();
 }
 function chase(e, max, acc, dt) {
@@ -737,7 +762,6 @@ function hitPlayer() {
 function update(dt) {
   time += dt;
   if (state === 'play') runT += dt;
-  if (state === 'over') overT += dt;
   if (invuln > 0) invuln -= dt;
   if (banner) { banner.t += dt; if (banner.t > 2.2) banner = null; }
   if (hintT > 0) { hintT -= dt; if (hintT <= 0) setHint(''); }
@@ -868,6 +892,14 @@ function update(dt) {
 
 function die() {
   alive = false; state = 'over'; overT = 0; preview = null;
+  const lines = [], g = pickGoal(true);
+  if (g && g.value - score <= Math.max(500, g.value * 0.4)) lines.push('Mancavano ' + fmt(g.value - score) + ' punti ' + (g.kind === 'rec' ? (daily ? 'al tuo migliore di oggi' : 'al tuo record') : g.kind === 'player' ? 'per superare ' + g.name : 'alla missione'));
+  if (!tut && wave > 0 && breakT <= 0) {
+    const left = enemies.length + queue.reduce((a, it) => a + it.n, 0);
+    if (left > 0 && left <= 8) lines.push((left === 1 ? 'Mancava un nemico' : 'Mancavano ' + left + ' nemici') + ' alla fine dell\'ondata ' + wave);
+  }
+  nearText = lines.join('. ');
+  if (wave > bestWave) { bestWave = wave; store.set('nodo_bw', String(bestWave)); }
   burst(px, py, tailColor(), 60, 520); burst(px, py, C.ink, 34, 320);
   rings.push({ x: px, y: py, t: 0, max: 0.9, r: 260 * S, color: C.ink, w: 9 }, { x: px, y: py, t: 0, max: 0.6, r: 130 * S, color: C.coral, w: 6 });
   if (!reduceMotion) { flash = 0.3; shake = 20; timeScale = 0.2; }
@@ -1136,16 +1168,26 @@ function draw() {
 }
 
 /* ---------- HUD & panels ---------- */
-const elScore = $('score'), elMult = $('mult'), elCombo = $('combo'), elBar = $('comboBar'), elBest = $('best'), elWave = $('wave'), elShields = $('shields');
-let shownScore = -1, shownMult = -1, shownBest = -1, shownWave = '', shownShields = -1, shownCol = '';
+const elScore = $('score'), elMult = $('mult'), elCombo = $('combo'), elBar = $('comboBar'), elGoal = $('goalText'), elGoalBar = $('goalBar'), elWave = $('wave'), elShields = $('shields');
+let shownScore = -1, shownMult = -1, shownGoal = '', shownWave = '', shownShields = -1, shownCol = '';
 function hud() {
   if (score !== shownScore) { shownScore = score; elScore.textContent = fmt(score); }
   if (mult !== shownMult) { shownMult = mult; elMult.textContent = '×' + mult; elCombo.classList.toggle('on', mult > 1); }
   const col = tailColor();
   if (col !== shownCol) { shownCol = col; elMult.style.background = elBar.style.background = col; }
-  const b = daily ? Math.max(dailyBest, score) : Math.max(best, score);
-  if (b !== shownBest) { shownBest = b; elBest.textContent = (daily ? 'Oggi ' : 'Record ') + fmt(b); }
-  const w = tut ? 'Prova' : (daily ? 'Sfida · ' : '') + 'Ondata ' + Math.max(1, wave);
+  if (state === 'play') {
+    if (goal && score >= goal.value) {
+      if (goal.kind === 'rec') { floatText(px, py - 46 * S, 'Nuovo record', 17 * S, C.amber); sfx.mission(); }
+      else if (goal.kind === 'player') toast('Hai superato ' + goal.name);
+      goalFrom = goal.value; goal = null; goalScore = -1;
+    }
+    if (score !== goalScore) { goalScore = score; goal = pickGoal(); }
+  }
+  const rec = daily ? dailyBest : best;
+  const gt = goal ? goal.label + ' tra ' + fmt(goal.value - score) : rec > 0 && score > rec ? 'Nuovo record +' + fmt(score - rec) : '';
+  if (gt !== shownGoal) { shownGoal = gt; elGoal.textContent = gt; $('goalTrack').hidden = !goal; }
+  if (goal) elGoalBar.style.transform = 'scaleX(' + clamp((score - goalFrom) / Math.max(1, goal.value - goalFrom), 0, 1).toFixed(3) + ')';
+  const w = tut ? 'Prova' : (daily ? 'Sfida · ' : '') + 'Ondata ' + Math.max(1, wave) + (bestWave > 0 ? ' · max ' + bestWave : '');
   if (w !== shownWave) { shownWave = w; elWave.textContent = w; }
   if (shields !== shownShields) { shownShields = shields; elShields.textContent = ''; for (let k = 0; k < shields; k++) elShields.append(document.createElement('i')); }
   elBar.style.transform = 'scaleX(' + clamp(comboT / COMBO, 0, 1).toFixed(3) + ')';
@@ -1160,7 +1202,7 @@ function goMenu() { fillMissions(); reset(); state = 'menu'; paused = false; dai
 function start(isDaily) {
   audioOn(); fillMissions(); reset(); daily = !!isDaily; state = 'play'; paused = false; show(null);
   runSeed = daily ? hash('nodo-' + today) : (Math.random() * 4294967296) >>> 0;
-  $('hud').hidden = false; shownBest = -1; sfx.start();
+  $('hud').hidden = false; shownGoal = '-'; sfx.start();
   if (!tutDone && !daily) {
     tut = true;
     const cx = W / 2, cy = Math.max(150 * S, H * 0.3), r = Math.min(105 * S, W * 0.3);
@@ -1192,6 +1234,7 @@ function showOver() {
   $('finalWave').textContent = Math.max(1, wave);
   $('finalKnot').textContent = run.knot;
   $('newRec').hidden = !newRecord;
+  $('nearMiss').textContent = nearText; $('nearMiss').hidden = !nearText;
   renderMissions($('overMissions'));
   show(pOver);
 }
@@ -1214,7 +1257,7 @@ cv.addEventListener('contextmenu', e => e.preventDefault());
 
 $('btnPlay').addEventListener('click', () => start(false));
 $('btnDaily').addEventListener('click', () => start(true));
-$('btnRetry').addEventListener('click', () => { if (overT > 0.7) start(daily); });
+$('btnRetry').addEventListener('click', () => start(daily));
 $('btnOverMenu').addEventListener('click', goMenu);
 $('btnResume').addEventListener('click', () => setPause(false));
 $('btnQuit').addEventListener('click', goMenu);
@@ -1238,7 +1281,7 @@ window.addEventListener('keydown', e => {
   if (k === 'p' || k === 'Escape') { if (state === 'play') setPause(!paused); }
   else if (k === ' ' || k === 'Enter') {
     if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
-    if (state === 'menu' && !pMenu.hidden) start(false); else if (state === 'over' && overT > 0.9) start(daily); else if (paused) setPause(false);
+    if (state === 'menu' && !pMenu.hidden) start(false); else if (state === 'over' && overT > 0.45) start(daily); else if (paused) setPause(false);
   }
 });
 window.addEventListener('keyup', e => { keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false; });
@@ -1255,7 +1298,7 @@ function frame(now) {
     timeScale += (1 - timeScale) * Math.min(1, dt * 3.5);
     update(dt * timeScale);
   }
-  if (state === 'over') { if (!overShown && overT > 0.75) { overShown = true; showOver(); } } else overShown = false;
+  if (state === 'over') { overT += dt; if (!overShown && overT > 0.45) { overShown = true; showOver(); } } else overShown = false;
   draw(); hud();
   requestAnimationFrame(frame);
 }
